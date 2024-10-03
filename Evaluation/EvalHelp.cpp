@@ -55,6 +55,9 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &oppPawns, const
     int Score = 0;
     int rank = sq.rank();
     int file = sq.file();
+    int index = sq.index();
+
+    uint64_t FriendlyPawns = FriendPawns.getBits();
 
     uint64_t PForward;
 
@@ -87,7 +90,7 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &oppPawns, const
         }
     }
 
-    uint64_t sameFilePawns = fileMask & FriendPawns.getBits();
+    uint64_t sameFilePawns = fileMask & FriendlyPawns;
     uint64_t currentPawnPosition = 1ULL << sq.index();
 
     // Check if there are any other pawns on the same file (excluding the current pawn)
@@ -96,7 +99,7 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &oppPawns, const
     }
 
     // Check for isolated pawns
-    if (((leftFileMask | rightFileMask) & FriendPawns.getBits()) == 0) {
+    if (((leftFileMask | rightFileMask) & FriendlyPawns) == 0) {
         Score -= 4;
     }
     
@@ -105,6 +108,32 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &oppPawns, const
         Score += 17;
     }
 
+    //Check if a pawn is a phalanx pawn
+    uint64_t LeftSquare = (file > 0) ? (currentPawnPosition << 1) : 0;
+    uint64_t RightSquare = (file < 7) ? (currentPawnPosition >> 1) : 0;
+
+    if ((FriendlyPawns & LeftSquare) != 0) {
+        Score += 7;
+    }
+
+    if((FriendlyPawns & RightSquare) != 0){
+        Score += 7;
+    }
+
+    //Check if a pawn is connected
+    uint64_t DownLeft, DownRight;
+
+    if (isWhite) {
+        DownLeft = (currentPawnPosition >> 9) & ~0x0101010101010101ULL;  // Prevent wrap-around on file 'a'
+        DownRight = (currentPawnPosition >> 7) & ~0x8080808080808080ULL; // Prevent wrap-around on file 'h'
+    }else {
+        DownLeft = (currentPawnPosition << 7) & ~0x0101010101010101ULL;  // Prevent wrap-around on file 'a'
+        DownRight = (currentPawnPosition << 9) & ~0x8080808080808080ULL; // Prevent wrap-around on file 'h'
+    }
+
+    if ((FriendlyPawns & DownLeft) != 0 || (FriendlyPawns & DownRight) != 0) {
+        Score += 4;
+    }
     
     return Score;
 }
@@ -114,17 +143,17 @@ int EvaluateKnight(const chess::Square &sq, const chess::Bitboard& oppPawns, con
     //and basically harrass the other side
     int file = sq.file();
     int rank = sq.rank();
-
+    int index = sq.index();
     //Get the bits behind one rank of the knight and in front of it
     uint64_t KForward;
     uint64_t KBackward;
 
     if (isWhite) {
         KForward = (rank > 0) ? 0xFFFFFFFFFFFFFFFFULL << ((rank+1) * 8) : 0;
-        KBackward = (sq.index() >= 9) ? 0x5ULL << (sq.index() - 9) : 0;
+        KBackward = (index >= 9) ? 0x5ULL << (index - 9) : 0;
     } else {
         KForward = (rank < 7) ? 0xFFFFFFFFFFFFFFFFULL >> ((rank) * 8) : 0;
-        KBackward = (sq.index() <= 56) ? 0x5ULL << (sq.index() + 7) : 0;
+        KBackward = (index <= 56) ? 0x5ULL << (index + 7) : 0;
     }
     
     // Create bitboards for the adjacent files
