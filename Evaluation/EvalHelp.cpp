@@ -1,6 +1,36 @@
-#include "EvalHelp.h"
 #include "..\ChessLib\chess-library-master\include\chess.hpp"
+#include "..\Helper\HelperFunctions.h"
+
+#include "EvalHelp.h"
 #include <iostream>
+
+chess::Bitboard GetPawnControlledSquares(const chess::Bitboard pawns,const chess::Color color){
+    std::vector<uint8_t> PawnIndexes = GetIndexesFromBitBoard(pawns);
+
+    chess::Bitboard PawnAttackBitboard = chess::Bitboard(0ULL);
+
+    for(const auto &index : PawnIndexes){
+        PawnAttackBitboard |= chess::attacks::pawn(color, index);
+    }
+
+    return PawnAttackBitboard;
+}
+
+chess::Bitboard NorthFill(chess::Bitboard PawnFile){
+    PawnFile |= (PawnFile << 8);
+    PawnFile |= (PawnFile << 16);
+    PawnFile |= (PawnFile << 32);
+
+    return PawnFile;
+}
+
+chess::Bitboard SouthFill(chess::Bitboard PawnFile){
+    PawnFile |= (PawnFile >> 8);
+    PawnFile |= (PawnFile >> 16);
+    PawnFile |= (PawnFile >> 32);
+
+    return PawnFile;
+}
 
 int PiecesValue(const chess::PieceType& type){
     if (type == chess::PieceType::PAWN)        {return 226;}
@@ -113,11 +143,11 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &oppPawns, const
     uint64_t RightSquare = (file < 7) ? (currentPawnPosition >> 1) : 0;
 
     if ((FriendlyPawns & LeftSquare) != 0) {
-        Score += 7;
+        Score += 29;
     }
 
     if((FriendlyPawns & RightSquare) != 0){
-        Score += 7;
+        Score += 29;
     }
 
     //Check if a pawn is connected
@@ -132,18 +162,19 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &oppPawns, const
     }
 
     if ((FriendlyPawns & DownLeft) != 0 || (FriendlyPawns & DownRight) != 0) {
-        Score += 4;
+        Score += 44;
     }
     
     return Score;
 }
 
-int EvaluateKnight(const chess::Square &sq, const chess::Bitboard& oppPawns, const chess::Bitboard& FriendPawns, bool isWhite){
+int EvaluateKnight(const chess::Square &sq, const chess::Bitboard& oppPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& SCBEP, const chess::Bitboard& FriendlyRearSpan, bool isWhite){
     //We want Knights to be on outposts in the middle so they can control as many squares as possible
     //and basically harrass the other side
     int file = sq.file();
     int rank = sq.rank();
     int index = sq.index();
+    
     //Get the bits behind one rank of the knight and in front of it
     uint64_t KForward;
     uint64_t KBackward;
@@ -175,7 +206,10 @@ int EvaluateKnight(const chess::Square &sq, const chess::Bitboard& oppPawns, con
     //Check Knight mobility but disregard squares that pawns are on
     chess::Bitboard KnightMoves = chess::attacks::knight(sq);
 
-    Score += (KnightMoves & ~oppPawns).count() * 15;
+    Score += (KnightMoves & ~SCBEP).count() * 15;
+
+    Score += ((KnightMoves & ~FriendlyRearSpan & ~SCBEP).count()) * 12;
+    Score += ((KnightMoves & FriendlyRearSpan & ~SCBEP).count()) * 15;
 
     return Score;
 }
@@ -208,7 +242,7 @@ int EvaluateRooks(const chess::Square &sq, const chess::Bitboard& oppPawns, cons
     return Score;
 }
 
-int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ ,const chess::Bitboard& oppPawns, const chess::Bitboard& FriendPawns, float weight, bool isWhite){
+int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ ,const chess::Bitboard& oppPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& EnemyPawnsSq, const chess::Bitboard& FriendlyRearSpan, float weight, bool isWhite){
     static const chess::Bitboard LIGHT_SQUARES= chess::Bitboard(0x55AA55AA55AA55AAULL);
     static const chess::Bitboard DARK_SQUARES = chess::Bitboard(0xAA55AA55AA55AA55ULL);
 
@@ -281,6 +315,10 @@ int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ ,const che
 
     Score += BishopBitBoard.count() * static_cast<int>(weight * 10 + (1.0f - weight) * 12);
 
+    // Calculate space
+    Score += ((BishopBitBoard & ~FriendlyRearSpan & ~EnemyPawnsSq).count()) * 12;
+    Score += ((BishopBitBoard & FriendlyRearSpan & ~EnemyPawnsSq).count()) * 15;
+
     return Score;
 }
 
@@ -296,34 +334,4 @@ int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ ,const che
 //         }
 //         std::cout << '\n';
 //     }
-// }
-
-// void GetBitBoard(bool isWhite, chess::Square sq){
-//     int file = sq.file();
-//     int rank = sq.rank();
-
-//     //Get the bits behind one rank of the knight and in front of it
-//     uint64_t KForward;
-//     uint64_t KBackward;
-
-//     if (isWhite) {
-//         KForward = (rank > 0) ? 0xFFFFFFFFFFFFFFFFULL << ((rank+1) * 8) : 0;
-//         KBackward = (sq.index() > 9) ? 0x5ULL << (sq.index() - 9) : 0;
-//     } else {
-//         KForward = (rank < 7) ? 0xFFFFFFFFFFFFFFFFULL >> ((rank) * 8) : 0;
-//         KBackward = (sq.index() < 56) ? 0x5ULL << (sq.index() + 7) : 0;
-//     }
-    
-//     uint64_t KFB = KForward | KBackward;
-    
-//     // Create bitboards for the adjacent files
-//     uint64_t leftFileMask = (file > 0) ? 0x0101010101010101ULL << (file - 1) : 0;
-//     uint64_t rightFileMask = (file < 7) ? 0x0101010101010101ULL << (file + 1) : 0;
-
-//     uint64_t CombinedMask = leftFileMask | rightFileMask;
-
-//     //Apply the forward mask to get the relevant bits in front and behind the knight which creates like an X Shape
-//     uint64_t KnightBits = KFB & CombinedMask;
-
-//     PrintBitBoard(KnightBits);
 // }
