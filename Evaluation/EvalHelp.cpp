@@ -32,6 +32,35 @@ chess::Bitboard SouthFill(chess::Bitboard PawnFile){
     return PawnFile;
 }
 
+#define PAWN_VALUE 342
+#define KNIGHT_VALUE 998
+#define BISHOP_VALUE 1127
+#define ROOK_VALUE 1717
+#define QUEEN_VALUE 3590
+#define NOPAWNSHIELD -13
+#define VQUEENSCOREMG -12
+#define VQUEENSCOREEG 1
+constexpr int PawnBonuses[] = {0, 441, 327, 172, 81, 33, 33};
+#define ISOLATEDPAWN -9
+#define DOUBLEDPAWN -23
+#define CENTREPAWN 18
+#define KNIGHTOUTPOST 105
+#define KNIGHTMOBILITY 28
+#define ROOKOPENFILE 67
+#define ROOKSEMIOPENFILE 19
+#define ROOKBACKRANK 68
+#define ROOKMOBILITYMG 10
+#define ROOKMOBILITYEG 11
+#define BISHOPOPENFILE 22
+#define BISHOPSEMIOPENFILE -6
+#define BISHOPNONFIXEDPAWNS -4
+#define BISHOPFIXEDPAWNS -11
+#define BISHOPMOBILITYMG 14
+#define BISHOPMOBILITYEG 16
+#define SCORE_OPEN_FILE 59
+#define SCORE_SEMI_OPEN_FILE 8
+#define SCORE_OPEN_DIAGONAL 25
+
 int PiecesValue(const chess::PieceType& type){
     if (type == chess::PieceType::PAWN)        {return 226;}
     else if (type == chess::PieceType::KNIGHT) {return 664;}
@@ -68,9 +97,7 @@ int SafetyScore(const chess::Square &KSq, const chess::Bitboard& occ ,const ches
     int SafetyScore = 0;
     
     //See if the king has a pawn shield
-    if((FriendPawns.getBits() & combinedMask) == 0){
-        SafetyScore += static_cast<int>(weight * -51);
-    }
+    SafetyScore += (FriendPawns & combinedMask).count() * static_cast<int>(weight * -17);
 
     //Virtual Queen Score 
     SafetyScore += chess::attacks::queen(KSq, occ).count() * static_cast<int>(weight * (-11) + (1 - weight) * 2);
@@ -80,6 +107,7 @@ int SafetyScore(const chess::Square &KSq, const chess::Bitboard& occ ,const ches
 
 int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &oppPawns, const chess::Bitboard &FriendPawns, bool isWhite) {
     constexpr static std::array<int, 7> PawnBonuses = {0, 271, 207, 122, 65, 36, 30};
+
     static const uint64_t Msquares = 0x1818000000;
 
     int Score = 0;
@@ -122,12 +150,12 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &oppPawns, const
 
     // Check if there are any other pawns on the same file (excluding the current pawn)
     if ((sameFilePawns & ~currentPawnPosition) != 0) {
-        Score -= 9;
+        Score += -9;
     }
 
     // Check for isolated pawns
     if (((leftFileMask | rightFileMask) & FriendPawns.getBits()) == 0) {
-        Score -= 4;
+        Score += -4;
     }
     
     //check if pawn is in the centre squares 
@@ -139,7 +167,7 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &oppPawns, const
     return Score;
 }
 
-int EvaluateKnight(const chess::Square &sq, const chess::Bitboard& oppPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& SCBEP, const chess::Bitboard& FriendlyRearSpan, bool isWhite){
+int EvaluateKnight(const chess::Square &sq, const chess::Bitboard& oppPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& SCBEP, bool isWhite){
     //We want Knights to be on outposts in the middle so they can control as many squares as possible
     //and basically harrass the other side
     int file = sq.file();
@@ -151,12 +179,12 @@ int EvaluateKnight(const chess::Square &sq, const chess::Bitboard& oppPawns, con
 
     if (isWhite) {
         KForward = (rank > 0) ? 0xFFFFFFFFFFFFFFFFULL << ((rank+1) * 8) : 0;
-        KBackward = (sq.index() >= 9) ? 0x5ULL << (sq.index() - 9) : 0;
-    } else {
+        KBackward = (sq.index() >= 9 ? 0x5ULL << (sq.index() - 9) : 0) & ~0x8181818181818181;
+    }else {
         KForward = (rank < 7) ? 0xFFFFFFFFFFFFFFFFULL >> ((rank) * 8) : 0;
-        KBackward = (sq.index() <= 56) ? 0x5ULL << (sq.index() + 7) : 0;
+        KBackward = (sq.index() <= 56 ? 0x5ULL << (sq.index() + 7) : 0) & ~0x8181818181818181;
     }
-    
+
     // Create bitboards for the adjacent files
     uint64_t leftFileMask = (file > 0) ? 0x0101010101010101ULL << (file - 1) : 0;
     uint64_t rightFileMask = (file < 7) ? 0x0101010101010101ULL << (file + 1) : 0;
@@ -177,9 +205,6 @@ int EvaluateKnight(const chess::Square &sq, const chess::Bitboard& oppPawns, con
     chess::Bitboard KnightMoves = chess::attacks::knight(sq);
 
     Score += (KnightMoves & ~SCBEP).count() * 15;
-
-    Score += ((KnightMoves & ~FriendlyRearSpan & ~SCBEP).count()) * 12;
-    Score += ((KnightMoves & FriendlyRearSpan & ~SCBEP).count()) * 15;
 
     return Score;
 }
@@ -212,7 +237,7 @@ int EvaluateRooks(const chess::Square &sq, const chess::Bitboard& oppPawns, cons
     return Score;
 }
 
-int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ ,const chess::Bitboard& oppPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& EnemyPawnsSq, const chess::Bitboard& FriendlyRearSpan, float weight, bool isWhite){
+int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const chess::Bitboard& oppPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& EnemyPawnsSq, float weight, bool isWhite){
     static const chess::Bitboard LIGHT_SQUARES= chess::Bitboard(0x55AA55AA55AA55AAULL);
     static const chess::Bitboard DARK_SQUARES = chess::Bitboard(0xAA55AA55AA55AA55ULL);
 
@@ -278,30 +303,45 @@ int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ ,const che
 
     //Use the forward mobility to calulate what a punishment should be for this closed position
     //Calculate the total number of non fixed pawns in the position
-    Score -= (NoOfPawns - NoOfFixedPawns) * 2;
+    Score += (NoOfPawns - NoOfFixedPawns) * -2;
     
     //Fixed Pawns are harder to get rid of so we should make them twice as bad
-    Score -= NoOfFixedPawns * -2;
+    Score += NoOfFixedPawns * -2;
 
-    Score += BishopBitBoard.count() * static_cast<int>(weight * 10 + (1.0f - weight) * 12);
-
-    // Calculate space
-    Score += ((BishopBitBoard & ~FriendlyRearSpan & ~EnemyPawnsSq).count()) * 12;
-    Score += ((BishopBitBoard & FriendlyRearSpan & ~EnemyPawnsSq).count()) * 15;
+    Score += (BishopBitBoard & ~EnemyPawnsSq).count() * static_cast<int>(weight * 10 + (1.0f - weight) * 12);
 
     return Score;
 }
 
-//USED FOR TESTING BITBOARD STUFF
-// void PrintBitBoard(uint64_t bitboard) {
-//     std::cout << "Bitboard:\n";
-//     for (int rank = 7; rank >= 0; --rank) {
-//         for (int file = 0; file < 8; ++file) {
-//             // Calculate the bit position
-//             uint64_t bit = 1ULL << (rank * 8 + file);
-//             // Print '1' if the bit is set, otherwise '0'
-//             std::cout << ((bitboard & bit) ? '1' : '0') << ' ';
-//         }
-//         std::cout << '\n';
-//     }
-// }
+int EvaluateQueen(const chess::Square &sq, chess::Bitboard& occ, chess::Bitboard& FriendPawns, chess::Bitboard& EnemyPawns, chess::Square Ksq, bool isWhite) {
+    int Score = 0;
+    int rank = sq.rank();
+    int file = sq.file();
+
+    chess::Bitboard QueenDiagonalBitBoard = chess::attacks::bishop(sq, occ);
+    chess::Bitboard QueenHorizontalBitboard(0x0101010101010101ULL << file);
+
+    chess::Bitboard CombinedMask = FriendPawns | EnemyPawns;
+
+    //Check if bishop controls a open diagonal
+    //The reason for < 2 is because the bishop can only control max 2 open diagonals if i didnt do this
+    //it could control a open diagonal and not be rewarded for it
+    if((CombinedMask & QueenDiagonalBitBoard).count() < 2){
+        Score += 50;
+    }
+
+    //Check if the queen is on a open/semi open file
+    if(((EnemyPawns | FriendPawns) & QueenHorizontalBitboard) == 0){
+        Score += 50;
+    }else if((EnemyPawns & QueenHorizontalBitboard) == 0){
+        Score += 20;
+    }
+
+    if(isWhite && sq.rank() == chess::Rank::RANK_7){
+        Score += 25;
+    }else if(!isWhite && sq.rank() == chess::Rank::RANK_2){
+        Score += 25;
+    }
+
+    return Score;
+}

@@ -28,16 +28,6 @@ int Evaluation(const chess::Board& board, int Ply){
     chess::Bitboard WPawnsSq = GetPawnControlledSquares(WPawns, chess::Color::WHITE);
     chess::Bitboard BPawnsSq = GetPawnControlledSquares(BPawns, chess::Color::BLACK);
 
-    //Init the rear spans
-    chess::Bitboard WRearSpan = chess::Bitboard(0ULL);
-    chess::Bitboard BRearSpan = chess::Bitboard(0ULL);
-
-    for (int i = 1; i < 7; i++) {
-        uint64_t fileMask = 0x0101010101010101ULL << i;
-        WRearSpan |= (SouthFill(chess::Bitboard(fileMask) & WPawns));
-        BRearSpan |= (NorthFill(chess::Bitboard(fileMask) & BPawns));
-    }
-
     //We get the bitboards for both sides to combine them
     chess::Bitboard WhiteBitboard = board.us(chess::Color::WHITE);
     chess::Bitboard BlackBitboard = board.us(chess::Color::BLACK);
@@ -78,11 +68,13 @@ int Evaluation(const chess::Board& board, int Ply){
             if(PieceType == chess::PieceType::PAWN){
                 WhiteScore += EvaluatePawn(Sq, BPawns, WPawns, true);
             }else if(PieceType == chess::PieceType::KNIGHT){
-                WhiteScore += EvaluateKnight(Sq, BPawns, WPawns, BPawnsSq, WRearSpan, true);
+                WhiteScore += EvaluateKnight(Sq, BPawns, WPawns, BPawnsSq, true);
             }else if(PieceType == chess::PieceType::ROOK){
                 WhiteScore += EvaluateRooks(Sq, BPawns, WPawns, CombinedBitboard, BEndgameWeight, true);
             }else if(PieceType == chess::PieceType::BISHOP){
-                WhiteScore += EvaluateBishop(Sq, CombinedBitboard, BPawns, WPawns, BPawnsSq, WRearSpan, BEndgameWeight, true);
+                WhiteScore += EvaluateBishop(Sq, CombinedBitboard, BPawns, WPawns, BPawnsSq, BEndgameWeight, true);
+            }else if(PieceType == chess::PieceType::QUEEN){
+                WhiteScore += EvaluateQueen(Sq, CombinedBitboard, WPawns, BPawns, BKsq, true);
             }
 
         }else{
@@ -91,20 +83,19 @@ int Evaluation(const chess::Board& board, int Ply){
             if(PieceType == chess::PieceType::PAWN){
                 BlackScore += EvaluatePawn(Sq, WPawns, BPawns, false);
             }else if(PieceType == chess::PieceType::KNIGHT){
-                BlackScore += EvaluateKnight(Sq, WPawns, BPawns, WPawnsSq, BRearSpan, false);
+                BlackScore += EvaluateKnight(Sq, WPawns, BPawns, WPawnsSq, false);
             }else if(PieceType == chess::PieceType::ROOK){
                 BlackScore += EvaluateRooks(Sq, WPawns, BPawns, CombinedBitboard, WEndgameWeight, false);
             }else if(PieceType == chess::PieceType::BISHOP){
-                BlackScore += EvaluateBishop(Sq, CombinedBitboard, WPawns, BPawns, WPawnsSq, BRearSpan, WEndgameWeight, false);
+                BlackScore += EvaluateBishop(Sq, CombinedBitboard, WPawns, BPawns, WPawnsSq, WEndgameWeight, false);
+            }else if(PieceType == chess::PieceType::QUEEN){
+                BlackScore += EvaluateQueen(Sq, CombinedBitboard, BPawns, WPawns, WKsq, true);
             }
         }
     }
 
     WhiteScore += SafetyScore(WKsq, CombinedBitboard, WPawns, BEndgameWeight, true);
     BlackScore += SafetyScore(BKsq, CombinedBitboard, BPawns, WEndgameWeight, false);
-
-    // WhiteScore += EvaluateSpace(board, CombinedBitboard, chess::Color::WHITE, WPawns, BPawnsSq);
-    // BlackScore += EvaluateSpace(board, CombinedBitboard, chess::Color::BLACK, BPawns, WPawnsSq);
 
     return (WhiteScore - BlackScore) * Perspective;
 }
