@@ -15,6 +15,6 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &oppPawns, const
 int EvaluateKnight(const chess::Square &sq, const chess::Bitboard& oppPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& SCBEP, bool isWhite);
 int EvaluateRooks(const chess::Square &sq, const chess::Bitboard& oppPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& occ,float weight, bool isWhite);
 int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ ,const chess::Bitboard& oppPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& EnemyPawnsSq, float weight, bool isWhite);
-int EvaluateQueen(const chess::Square &sq, chess::Bitboard& occ, chess::Bitboard& FriendPawns, chess::Bitboard& EnemyPawns, chess::Square Ksq, bool isWhite);
+int EvaluateQueen(const chess::Board& board, const chess::Square &sq, chess::Bitboard& occ, chess::Bitboard& EnemyPawns, chess::Square Ksq, bool isWhite);
 
 #endif

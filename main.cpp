@@ -2,148 +2,127 @@
 #include <string>
 #include <vector>
 #include <sstream>
-#include "ChessLib\chess-library-master\include\chess.hpp"
+#include "ChessLib/chess-library-master/include/chess.hpp"
 #include "Dimibot.h"
-#include "Book\Book.h"
+#include "Book/Book.h"
 
 using namespace std;
 
-Dimibot Bot;
-Trie Book;
+Dimibot bot;
+Trie book;
 chess::Board board;
 string FEN = board.getFen();
 
-void FindBestMove(std::vector<std::string>& Sequence){
-    //Find the best move
-    Move BestMove = Bot.Think(board, 100);
-
-    //Add the move to the sequence
-    Sequence.push_back(uci::moveToSan(board,BestMove));
-
-    //Apply the move to the board
-    board.makeMove(BestMove);
+// Function to find and apply the best move using the engine
+void FindBestMove(vector<string>& sequence) {
+    Move bestMove = bot.Think(board, 100);
+    sequence.push_back(uci::moveToSan(board, bestMove));
+    board.makeMove(bestMove);
 }
 
+// Function to handle UCI commands and game loop
 void uci_loop() {
-    bool Opening = false;
-    std::vector<std::string> Sequence;
+    bool opening = false;
+    vector<string> sequence;
 
     while (true) {
-        // Read a command from the user
         string command;
         getline(cin, command);
 
-        // Process the command
         if (command == "uci") {
             cout << "id name Dimibot" << endl;
             cout << "id author Dimiboi" << endl;
+            cout << "option name Threads type spin default 1 min 1 max 1" << endl;
+
             cout << "uciok" << endl;
         }
+
         else if (command.substr(0, 17) == "position startpos") {
             vector<string> info;
             istringstream iss(command);
-
-            for(string s; iss >> s; )
-                info.push_back(s);
+            string word;
+            while (iss >> word) info.push_back(word);
 
             if (info.size() > 2) {
-                // If they have alternate moves then we know that other moves have been played else just return the starting FEN to the engine
-                chess::Move OppMove = uci::uciToMove(board, info.back());
-                Sequence.push_back(uci::moveToSan(board, OppMove));
-                board.makeMove(OppMove);
-            }
-            else if (info.size() == 2){
-                FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+                // If additional moves exist, apply the opponent's move
+                chess::Move opponentMove = uci::uciToMove(board, info.back());
+                sequence.push_back(uci::moveToSan(board, opponentMove));
+                board.makeMove(opponentMove);
+            } else {
+                // Reset to starting position if no moves have been played
+                board.setFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
             }
 
             FEN = board.getFen();
         }
+
         else if (command.substr(0, 2) == "go") {
-            // Make the Engine find the best move
-            vector<string> info;
-            istringstream iss(command);
+            if (!opening) {
+                FindBestMove(sequence);  // Use the engine to find the best move
+            } else {
+                bool nextFound = false;
+                string sanMove;
+                tie(nextFound, sanMove) = book.FindNextMove(sequence);
 
-            for(string s; iss >> s; )
-                info.push_back(s);
-
-            if(!Opening){
-                FindBestMove(Sequence);
-
-            }else{
-                bool NextFound = false;
-                std::string SanMove;
-
-                //Try to find a book move
-                tie(NextFound, SanMove) = Book.FindNextMove(Sequence);
-
-                if(NextFound){
-                    //If found ask play that move
-                    chess::Move NextMove = chess::uci::parseSan(board, SanMove);
-
-                    Sequence.push_back(SanMove);
-
-                    board.makeMove(NextMove);
-
-                    cout << "bestmove " << chess::uci::uciToMove(board, uci::moveToUci(NextMove) )<< endl;
-
-                }else{
-                    //else fall back on the engine to find the optimal move
-                    Opening = false;
-                    FindBestMove(Sequence);
+                if (nextFound) {
+                    chess::Move nextMove = chess::uci::parseSan(board, sanMove);
+                    sequence.push_back(sanMove);
+                    board.makeMove(nextMove);
+                    cout << "bestmove " << uci::moveToUci(nextMove) << endl;
+                } else {
+                    // Fall back to engine if no book move is found
+                    opening = false;
+                    FindBestMove(sequence);
                 }
             }
+        }
 
-        }else if (command.substr(0, 12) == "position fen") {
-            // Handle "position fen <fen-string> [moves ...]"
+        else if (command.substr(0, 12) == "position fen") {
+            // Handle FEN input and apply moves if present
             istringstream iss(command);
-            string token;
-            string fen = "";
+            string token, fen;
+            iss >> token >> token;  // Skip "position fen"
 
-            // Skip the "position" and "fen" keywords
-            iss >> token;  // position
-            iss >> token;  // fen
-
-            // Read the FEN string until we encounter "moves"
+            // Capture FEN string
             while (iss >> token && token != "moves")
                 fen += token + " ";
-            
-            if (!fen.empty() && fen.back() == ' ') {
-                fen.pop_back();
-            }
 
-            // Set the FEN on the board
-            board.setFen(fen);
-            Sequence.clear();
+            if (!fen.empty() && fen.back() == ' ') fen.pop_back();
+            board.setFen(fen);  // Set the FEN position on the board
+            sequence.clear();
 
+            // Apply any subsequent moves
             while (iss >> token) {
-                chess::Move move = chess::uci::uciToMove(board, token);
+                chess::Move move = uci::uciToMove(board, token);
                 board.makeMove(move);
-                //Sequence.push_back(chess::uci::moveToSan(board, move));
             }
-        }else if (command == "quit") {
-            // Handle the quit command
-            break;
         }
+
+        else if (command == "quit") {
+            break;  // Exit the loop and terminate the program
+        }
+
         else if (command == "ucinewgame") {
-            // Reset the board for a new game
-            Bot.ClearTT();
+            // Reset for a new game
+            bot.ClearTT();
             board.setFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-            Sequence.clear();
-            Opening = false;
-        } 
+            sequence.clear();
+            opening = false;
+        }
+
         else if (command == "isready") {
             cout << "readyok" << endl;
         }
+
         else {
-            // Unknown command
+            // Unknown or unsupported commands
             cout << "Unknown command: " << command << endl;
         }
     }
 }
 
 int main() {
-    LoadOpeningBook(Book,"Book/Book.txt");
-
+    LoadOpeningBook(book, "Book/Book.txt");
     uci_loop();
 
     return 0;

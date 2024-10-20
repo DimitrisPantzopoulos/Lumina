@@ -15,7 +15,6 @@ using namespace std::chrono;
 #define Ninfinity -Infinity
 #define StartingPly 0
 #define ReduceDepth 2
-#define Delta 55
 
 int CalculateExtension(chess::Board& board, int &Extensions, const chess::Move& move){
     int Extension = 0;
@@ -174,14 +173,6 @@ int Dimibot::QSearch(Board& board, int alpha, int beta, int Ply){
 
     //Search all possible moves until Depth runs out
     for (const auto &move : LegalMoves){
-        
-        int MaterialGain = PiecesValue(board.at(move.to()).type());
-
-        // Delta pruning: Skip moves that don't significantly change the evaluation
-        if (eval + MaterialGain + Delta <= alpha) {
-            continue;
-        }
-        
         board.makeMove(move);
         int MoveEval = -QSearch(board, -beta, -alpha, Ply++);
         board.unmakeMove(move);

@@ -1,8 +1,9 @@
+CMakesList.txt
 /Chesslib
 book.txt
 book.epd
 config.json
-DimibotV16.exe
+DimibotV17.exe
 fastchess.exe
 png.pgn
 Helper/main.py
