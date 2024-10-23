@@ -122,7 +122,7 @@ void uci_loop() {
 }
 
 int main() {
-    LoadOpeningBook(book, "Book/Book.txt");
+    //LoadOpeningBook(book, "Book/Book.txt");
     uci_loop();
 
     return 0;

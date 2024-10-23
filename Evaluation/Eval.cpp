@@ -95,9 +95,13 @@ int Evaluation(const chess::Board& board, int Ply){
             // }
         }
     }
+    
+    WhiteScore += EvaluateMobilityArea(board, WPawns, BPawnsSq, chess::Color::BLACK);
+    BlackScore += EvaluateMobilityArea(board, BPawns, WPawnsSq, chess::Color::WHITE);
 
     WhiteScore += SafetyScore(WKsq, CombinedBitboard, WPawns, BEndgameWeight, true);
     BlackScore += SafetyScore(BKsq, CombinedBitboard, BPawns, WEndgameWeight, false);
+
 
     return (WhiteScore - BlackScore) * Perspective;
 }
