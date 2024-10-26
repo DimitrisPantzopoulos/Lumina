@@ -112,10 +112,12 @@ int SafetyScore(const chess::Square &KSq, const chess::Bitboard& occ ,const ches
     //Virtual Queen Score 
     SafetyScore += chess::attacks::queen(KSq, occ).count() * static_cast<int>(weight * VQUEENSCOREMG + (1 - weight) * VQUEENSCOREEG);
 
+    //Find how many pieces are threatening the king ring
+
     return SafetyScore;
 }
 
-int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &oppPawns, const chess::Bitboard &FriendPawns, bool isWhite) {
+int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &EnemyPawns, const chess::Bitboard &FriendPawns, bool isWhite) {
     constexpr static std::array<int, 7> PawnBonuses = {0, 271, 207, 122, 65, 36, 30};
 
     static const uint64_t Msquares = 0x1818000000;
@@ -124,30 +126,30 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &oppPawns, const
     int rank = sq.rank();
     int file = sq.file();
 
-    uint64_t PForward;
+    chess::Bitboard PForward;
 
     if (isWhite) {
-        PForward = 0xFFFFFFFFFFFFFFFFULL << ((rank + 1) * 8);
+        PForward = chess::Bitboard(0xFFFFFFFFFFFFFFFFULL << ((rank + 1) * 8));
     } else {
-        PForward = 0xFFFFFFFFFFFFFFFFULL >> ((rank) * 8);
+        PForward = chess::Bitboard(0xFFFFFFFFFFFFFFFFULL >> ((rank) * 8));
     }
 
     // Create a bitboard for the same file
-    uint64_t fileMask = 0x0101010101010101ULL << file;
+    chess::Bitboard fileMask(0x0101010101010101ULL << file);
 
     // Create bitboards for the adjacent files
-    uint64_t leftFileMask = (file > 0) ? 0x0101010101010101ULL << (file - 1) : 0;
-    uint64_t rightFileMask = (file < 7) ? 0x0101010101010101ULL << (file + 1) : 0;
+    chess::Bitboard leftFileMask ((file > 0) ? 0x0101010101010101ULL << (file - 1) : 0);
+    chess::Bitboard rightFileMask((file < 7) ? 0x0101010101010101ULL << (file + 1) : 0);
 
     // Combine the masks
-    uint64_t combinedMask = fileMask | leftFileMask | rightFileMask;
+    chess::Bitboard combinedMask = fileMask | leftFileMask | rightFileMask;
 
     // Apply the forward mask to get the relevant bits in front of the pawn
-    uint64_t PawnBits = PForward & combinedMask;
+    chess::Bitboard PawnBits = PForward & combinedMask;
 
-    // Check if there are any opposing pawns in the relevant bits (Passed Pawn)
+    //Check if there are any opposing pawns in the relevant bits (Passed Pawn)
     //Or they are infront of the king which can be used to accellerate an attack on the king (Pawn Storm Heuristic)
-    if ((PawnBits & oppPawns.getBits()) == 0) {
+    if ((PawnBits & EnemyPawns) == 0) {
         if (isWhite) {
             Score += PawnBonuses[7 - rank];
         } else {
@@ -155,8 +157,8 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &oppPawns, const
         }
     }
 
-    uint64_t sameFilePawns = fileMask & FriendPawns.getBits();
-    uint64_t currentPawnPosition = 1ULL << sq.index();
+    chess::Bitboard sameFilePawns(fileMask & FriendPawns.getBits());
+    chess::Bitboard currentPawnPosition(1ULL << sq.index());
 
     // Check if there are any other pawns on the same file (excluding the current pawn)
     if ((sameFilePawns & ~currentPawnPosition) != 0) {
@@ -164,13 +166,18 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &oppPawns, const
     }
 
     // Check for isolated pawns
-    if (((leftFileMask | rightFileMask) & FriendPawns.getBits()) == 0) {
+    if (((leftFileMask | rightFileMask) & FriendPawns) == 0) {
         Score += DOUBLEDPAWN;
     }
     
     //check if pawn is in the centre squares 
     if((currentPawnPosition & Msquares) != 0){
         Score += CENTREPAWN;
+    }
+
+    //Check if the Pawn could probably become a passed pawn
+    if((PForward & EnemyPawns) == 0){
+        Score += 64; //TUNE
     }
 
     return Score;
@@ -251,7 +258,7 @@ int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const che
     static const chess::Bitboard DARK_SQUARES = chess::Bitboard(0xAA55AA55AA55AA55ULL);
 
     chess::Bitboard BishopBitBoard = chess::attacks::bishop(sq, occ);
-
+    
     int rank = sq.rank();
 
     //Create a combined mask which has both friendly and opposition pawns
@@ -356,7 +363,7 @@ int EvaluateQueen(const chess::Board& board, const chess::Square &sq, chess::Bit
         }
     }
     
-    // //Check if the queen is coordinating with other pieces
+    //Check if the queen is coordinating with other pieces
     chess::Bitboard Bishops = board.pieces(chess::PieceType::BISHOP, isWhite ? chess::Color::WHITE : chess::Color::BLACK);
     chess::Bitboard Rooks = board.pieces(chess::PieceType::ROOK, isWhite ? chess::Color::WHITE : chess::Color::BLACK);
 

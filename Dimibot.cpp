@@ -79,7 +79,6 @@ chess::Move Dimibot::Think(Board& board, int Milliseconds) {
 }
 
 int Dimibot::Search(chess::Board& board, int Ply ,int PlyRemaining, int alpha, int beta, int Extensions){
-
     if(board.isRepetition(1)){
         return 0;
     }
@@ -108,8 +107,6 @@ int Dimibot::Search(chess::Board& board, int Ply ,int PlyRemaining, int alpha, i
     if (PlyRemaining == 0 || State != GameResult::NONE){
         return QSearch(board, alpha, beta, Ply);
     }
-
-
     //Generate Legal Moves
     chess::Movelist LegalMoves = OrderMoves(board, BestMove);
 
@@ -183,7 +180,9 @@ int Dimibot::QSearch(Board& board, int alpha, int beta, int Ply){
         }
 
         //Update alpha
-        alpha = std::max(alpha, MoveEval);
+        if (alpha < MoveEval){
+            alpha = MoveEval;
+        }
     } 
 
     return alpha;
