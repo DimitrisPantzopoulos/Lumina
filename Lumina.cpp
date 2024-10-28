@@ -1,5 +1,5 @@
 #include "ChessLib\chess-library-master\include\chess.hpp"
-#include "Dimibot.h"
+#include "Lumina.h"
 #include "Evaluation/Eval.h"
 #include "MoveOrdering/Orderer.h"
 #include "Helper/SEE.h"
@@ -8,13 +8,20 @@
 
 #include <iostream>
 #include <chrono>
+#include <thread>
+#include <atomic>
 
-using namespace std::chrono;
+#define Infinity    9999999
+#define Ninfinity   -Infinity
+#define SEARCH_CANCELLED 0
 
-#define Infinity  9999999
-#define Ninfinity -Infinity
 #define StartingPly 0
 #define ReduceDepth 2
+
+void Timer(int Milliseconds, std::atomic<bool>& CanSearch){
+    std::this_thread::sleep_for(std::chrono::milliseconds(Milliseconds));
+    CanSearch = false;
+}
 
 int CalculateExtension(chess::Board& board, int &Extensions, const chess::Move& move){
     int Extension = 0;
@@ -30,46 +37,45 @@ int CalculateExtension(chess::Board& board, int &Extensions, const chess::Move& 
     return Extension;
 }
 
-chess::Move Dimibot::Think(Board& board, int Milliseconds) {
-    // Record the start time
-    auto start = high_resolution_clock::now();
-    
-    // Calculate the end time based on the given milliseconds
-    auto endTime = start + milliseconds(Milliseconds);
+chess::Move Lumina::Think(Board& board, int Milliseconds) {
+    //Set CanSearch to true so we can search
+    CanSearch = true;
 
-    chess::Move BestMove;
+    //Start timer to keep track of how long we are searching for
+    auto TimerThread = std::thread(Timer, Milliseconds, std::ref(CanSearch));
+
+    chess::Move BestMove = chess::Move::NO_MOVE;
     int BestEval = Ninfinity;
 
     // Generate Legal Moves and the No Move is just for filler
-    chess::Movelist LegalMoves = OrderMoves(board, BestMove);
+    chess::Movelist LegalMoves = OrderMoves(board, BestMoveFound);
 
     for (int PlyRemaining = 1; PlyRemaining < 256; PlyRemaining++) {
-        bool timeExpired = false;
         
         for (const auto &move : LegalMoves) {
-
-            auto now = high_resolution_clock::now();
-
-            if (now >= endTime) { 
-                timeExpired = true;
-                break; // Exit the inner loop
-            }
-            
             board.makeMove(move);
             int eval = -Search(board, StartingPly, PlyRemaining, Ninfinity, Infinity, 0);
             board.unmakeMove(move);
+            
+            if (eval > BestEval && CanSearch) {
 
-            if (eval > BestEval) {
                 BestEval = eval;
                 BestMove = move;
+
                 BestMoveFound = BestMove;
             }
+
+            // Exit the search if time is up to keep up with time
+            if (!CanSearch) {break;}
         }
         
-        if (timeExpired) {
-            break; // Exit the outer loop
-        }
+        // Exit the search to keep up with timer
+        if (!CanSearch) {break;}
+    }
 
+    // Clean up timer thread
+    if (TimerThread.joinable()) {
+        TimerThread.join();
     }
 
     std::cout << "info score cp " << BestEval << std::endl;
@@ -78,16 +84,15 @@ chess::Move Dimibot::Think(Board& board, int Milliseconds) {
     return BestMove;
 }
 
-int Dimibot::Search(chess::Board& board, int Ply ,int PlyRemaining, int alpha, int beta, int Extensions){
-    if(board.isRepetition(1)){
-        return 0;
-    }
+int Lumina::Search(chess::Board& board, int Ply ,int PlyRemaining, int alpha, int beta, int Extensions){
+    if(!CanSearch){return SEARCH_CANCELLED;}
+
+    if(board.isRepetition(1)){return 0;}
 
     //TranspositionTable Lookup
     chess::Move BestMove = BestMoveFound;
     uint64_t key = board.zobrist();
     TTEntry ttEntry;
-
     int ttype = 1; //UPPERBOUND
 
     if (retrieveTTEntry(key, ttEntry, PlyRemaining)){
@@ -107,6 +112,7 @@ int Dimibot::Search(chess::Board& board, int Ply ,int PlyRemaining, int alpha, i
     if (PlyRemaining == 0 || State != GameResult::NONE){
         return QSearch(board, alpha, beta, Ply);
     }
+
     //Generate Legal Moves
     chess::Movelist LegalMoves = OrderMoves(board, BestMove);
 
@@ -137,6 +143,8 @@ int Dimibot::Search(chess::Board& board, int Ply ,int PlyRemaining, int alpha, i
 
         board.unmakeMove(move);
 
+        if(!CanSearch){return SEARCH_CANCELLED;}
+
         if (MoveEval >= beta){
             storeTTEntry(key, beta, PlyRemaining, 3, move); //LOWERBOUND
 
@@ -153,10 +161,11 @@ int Dimibot::Search(chess::Board& board, int Ply ,int PlyRemaining, int alpha, i
     }
 
     storeTTEntry(key, alpha, PlyRemaining, ttype, BestMove);
+
     return alpha;
 }
 
-int Dimibot::QSearch(Board& board, int alpha, int beta, int Ply){
+int Lumina::QSearch(Board& board, int alpha, int beta, int Ply){
     int eval = Evaluation(board, Ply);
 
     if(eval >= beta){

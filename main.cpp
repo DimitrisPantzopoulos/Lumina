@@ -1,21 +1,23 @@
+#include "ChessLib/chess-library-master/include/chess.hpp"
+#include "Lumina.h"
+#include "Book/Book.h"
+
 #include <iostream>
 #include <string>
 #include <vector>
 #include <sstream>
-#include "ChessLib/chess-library-master/include/chess.hpp"
-#include "Dimibot.h"
-#include "Book/Book.h"
+
+#define AvgMovesaGame 60
 
 using namespace std;
 
-Dimibot bot;
+Lumina bot;
 Trie book;
 chess::Board board;
 string FEN = board.getFen();
 
-// Function to find and apply the best move using the engine
-void FindBestMove(vector<string>& sequence) {
-    Move bestMove = bot.Think(board, 100);
+void FindBestMove(vector<string>& sequence, int Milliseconds) {
+    Move bestMove = bot.Think(board, Milliseconds);
     sequence.push_back(uci::moveToSan(board, bestMove));
     board.makeMove(bestMove);
 }
@@ -57,22 +59,40 @@ void uci_loop() {
         }
 
         else if (command.substr(0, 2) == "go") {
+            istringstream iss(command);
+            string token, fen;
+            std::vector<string> TimeControl;
+
+            while (iss >> token){
+                if(token == "wtime" || token == "btime"){continue;}
+                TimeControl.push_back(token);
+            }
+            
+            //The commented code is an attempt to dynamically find how long we should search based on how much time is left, I've left it out because i think to improve the
+            //search function it would be better to have this variable be the same for testing purposes. Also this has a wierd bug which causes the program to disconnect from 
+            //fastchess my guess is because its trying to search for a few milliseconds it cant do it fast enough so it just returns a null move or smth.
+            int TimeToSearch = 100; //(board.sideToMove() == Color::WHITE ? std::stoi(TimeControl[2]) : std::stoi(TimeControl[4])) / (AvgMovesaGame - sequence.size() + 1);   
+
             if (!opening) {
-                FindBestMove(sequence);  // Use the engine to find the best move
+                FindBestMove(sequence, TimeToSearch);
             } else {
+
                 bool nextFound = false;
                 string sanMove;
                 tie(nextFound, sanMove) = book.FindNextMove(sequence);
 
                 if (nextFound) {
+
                     chess::Move nextMove = chess::uci::parseSan(board, sanMove);
                     sequence.push_back(sanMove);
                     board.makeMove(nextMove);
                     cout << "bestmove " << uci::moveToUci(nextMove) << endl;
+
                 } else {
+
                     // Fall back to engine if no book move is found
                     opening = false;
-                    FindBestMove(sequence);
+                    FindBestMove(sequence, TimeToSearch);
                 }
             }
         }
@@ -81,14 +101,14 @@ void uci_loop() {
             // Handle FEN input and apply moves if present
             istringstream iss(command);
             string token, fen;
-            iss >> token >> token;  // Skip "position fen"
+            iss >> token >> token;
 
             // Capture FEN string
             while (iss >> token && token != "moves")
                 fen += token + " ";
 
             if (!fen.empty() && fen.back() == ' ') fen.pop_back();
-            board.setFen(fen);  // Set the FEN position on the board
+            board.setFen(fen); 
             sequence.clear();
 
             // Apply any subsequent moves
@@ -122,7 +142,7 @@ void uci_loop() {
 }
 
 int main() {
-    //LoadOpeningBook(book, "Book/Book.txt");
+    LoadOpeningBook(book, "Book/Book.txt");
     uci_loop();
 
     return 0;

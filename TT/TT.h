@@ -2,7 +2,7 @@
 #define TT_H
 
 #include "..\ChessLib\chess-library-master\include\chess.hpp"
-#include "../Dimibot.h"
+#include "../Lumina.h"
 #include <vector>
 
 struct TTEntry {

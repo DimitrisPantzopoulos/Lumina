@@ -175,11 +175,6 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &EnemyPawns, con
         Score += CENTREPAWN;
     }
 
-    //Check if the Pawn could probably become a passed pawn
-    if((PForward & EnemyPawns) == 0){
-        Score += 64; //TUNE
-    }
-
     return Score;
 }
 

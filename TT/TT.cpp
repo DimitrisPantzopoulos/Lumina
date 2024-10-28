@@ -1,8 +1,10 @@
 #include "..\ChessLib\chess-library-master\include\chess.hpp"
-#include "../Dimibot.h"
+#include "../Lumina.h"
 #include "TT.h"
 
-void Dimibot::storeTTEntry(const uint64_t key, int value, int depth, int nodeType, chess::Move bestMove) {
+#define MAX_TT_SIZE 4194304 //64 MB limit
+
+void Lumina::storeTTEntry(const uint64_t key, int value, int depth, int nodeType, chess::Move bestMove) {
     auto it = TT.find(key);
     
     if (it != TT.end()) {
@@ -11,6 +13,13 @@ void Dimibot::storeTTEntry(const uint64_t key, int value, int depth, int nodeTyp
             TTEntry entry(value, depth, nodeType, bestMove);
             TT[key] = entry;
         }
+        
+        // Check if TT is full
+        if (TT.size() >= MAX_TT_SIZE) {
+            // Remove a random entry
+            auto RandomEntry = std::next(TT.begin(), std::rand() % TT.size());
+            TT.erase(RandomEntry);
+        }
 
     } else {
         TTEntry entry(value, depth, nodeType, bestMove);
@@ -18,7 +27,7 @@ void Dimibot::storeTTEntry(const uint64_t key, int value, int depth, int nodeTyp
     }
 }
 
-bool Dimibot::retrieveTTEntry(const uint64_t key, TTEntry &entry, int depth) {
+bool Lumina::retrieveTTEntry(const uint64_t key, TTEntry &entry, int depth) {
     auto it = TT.find(key);
 
     if (it != TT.end()) {
@@ -30,6 +39,6 @@ bool Dimibot::retrieveTTEntry(const uint64_t key, TTEntry &entry, int depth) {
     return false;
 }
 
-void Dimibot::ClearTT(){
+void Lumina::ClearTT(){
     TT.clear();
 }

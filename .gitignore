@@ -3,7 +3,7 @@ CMakesList.txt
 book.txt
 book.epd
 config.json
-DimibotV17.exe
+LuminaV0.exe
 fastchess.exe
 png.pgn
 Helper/main.py
