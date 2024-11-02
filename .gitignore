@@ -3,7 +3,7 @@ CMakesList.txt
 book.txt
 book.epd
 config.json
-LuminaV0.exe
 fastchess.exe
 png.pgn
 Helper/main.py
+Helper/SEEEXPERIMENTAL.txt

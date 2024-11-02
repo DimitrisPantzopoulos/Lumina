@@ -9,6 +9,6 @@
 
 #define Infinity 9999999
 
-int SEE(chess::Board& board, chess::Move move);
+bool SEE(const chess::Board& board, const chess::Move& move, const int Threshold); //TODO: FIND THE CORRECT THRESHOLD
 
 #endif

@@ -7,8 +7,6 @@
 #include <vector>
 #include <sstream>
 
-#define AvgMovesaGame 60
-
 using namespace std;
 
 Lumina bot;
@@ -125,6 +123,7 @@ void uci_loop() {
         else if (command == "ucinewgame") {
             // Reset for a new game
             bot.ClearTT();
+            bot.ClearKMT();
             board.setFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
             sequence.clear();
             opening = false;

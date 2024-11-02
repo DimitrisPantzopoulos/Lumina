@@ -1,58 +1,80 @@
 #include "..\ChessLib\chess-library-master\include\chess.hpp"
 #include "..\Evaluation\Eval.h"
 #include "HelperFunctions.h"
-#include <iostream>
-#include <vector>
-#include <numeric>
-#include <algorithm>
 
-#define KingValue 9999
+//|--------------------------------------------------------------------------------------------------|
+//  STATIC EXCHANGE EVALUATION WAS MADE BY RAFID-DEV FOR RICE, WHICH IS LISCENCED UNDER THE GNU GPL-3.0
+//  https://github.com/rafid-dev/rice/blob/main/src/see.cpp#L1    
+//|--------------------------------------------------------------------------------------------------|
+bool SEE(const chess::Board& board, const chess::Move& move, const int Threshold) {
+    static const std::array<chess::PieceType, 6> pts = {chess::PieceType::PAWN, chess::PieceType::KNIGHT, chess::PieceType::BISHOP, chess::PieceType::ROOK, chess::PieceType::QUEEN, chess::PieceType::KING};
 
-int SEE(chess::Board& board, chess::Move move) {
-    chess::Square target = move.to();
-    chess::PieceType capturedPiece = board.at(target).type();
-    int capturedValue = PiecesValue(capturedPiece);
+    chess::Square Target = move.to();
+    chess::Square TargetOrigin = move.from();
 
-    // Make the capture
-    board.makeMove(move);
-    chess::Color opponentColor = board.sideToMove();
+    chess::PieceType TargetType = board.at(Target).type();
 
-    int netValue = capturedValue;
+    int value = PiecesValue(TargetType); // - Threshold;
 
-    if (board.isAttacked(target, opponentColor)) {
-        //Get the movelist for captures in this position
-        chess::Movelist Moves;
-        chess::movegen::legalmoves<chess::movegen::MoveGenType::CAPTURE>(Moves, board);
+    if(value < 0){
+        return false;
+    }
 
-        // Generate recapture moves
-        int MinRecaptureValue = 9999;
-        chess::Move bestRecapture = chess::Move::NO_MOVE;
+    chess::PieceType Attacker = board.at(TargetOrigin).type();
 
-        for(const auto& move : Moves){
-            //Get the least valuable recapture 
-            if(move.to() == target){
-                chess::PieceType type = board.at(move.from()).type();
+    value -= PiecesValue(Attacker);
 
-                int PieceValue = PiecesValue(type);
+    if(value >= 0){
+        return true;
+    }
 
-                if(PieceValue < MinRecaptureValue){
-                    bestRecapture = move;
-                    MinRecaptureValue = PieceValue;
-                    if(MinRecaptureValue == 100){break;}
-                }
+    chess::Bitboard occ = (board.occ() ^ (1ULL << TargetOrigin.index()) | 1ULL << Target.index());
+    chess::Bitboard Attackers = chess::attacks::attackers(board, chess::Color::WHITE, Target) | chess::attacks::attackers(board, chess::Color::BLACK, Target);
+
+    chess::Bitboard Queens  = board.pieces(chess::PieceType::QUEEN);
+    chess::Bitboard Bishops = board.pieces(chess::PieceType::BISHOP);
+    chess::Bitboard Rooks = board.pieces(chess::PieceType::ROOK);
+
+    chess::Color EnemyColor = ~board.at(TargetOrigin).color();
+
+    while(true){
+        Attackers &= occ;
+
+        chess::Bitboard NowAttacking = Attackers & board.us(EnemyColor);
+
+        if(!NowAttacking){
+            break;
+        }
+
+        chess::PieceType pt;
+        for(int i=0; i<=5; i++){
+            pt = pts[i];
+
+            if(NowAttacking & (board.pieces(pt))){
+                break;
             }
         }
 
-        if(bestRecapture != chess::Move::NO_MOVE){
-            // Evaluate recaptures moves
-            int recaptureValue = -SEE(board, bestRecapture);
-            netValue = capturedValue + recaptureValue;
+        EnemyColor = ~EnemyColor;
+
+        if((value = -value - 1 - PiecesValue(pt)) >= 0){
+            if(pt == chess::PieceType::KING && (Attackers & board.us(EnemyColor))){
+                EnemyColor = ~EnemyColor;    
+            }
+
+            break;
         }
 
+        occ ^= (1ULL << (NowAttacking & board.pieces(pt)).lsb());
+
+        if(pt == chess::PieceType::PAWN || pt == chess::PieceType::BISHOP || pt == chess::PieceType::QUEEN){
+            NowAttacking |= chess::attacks::bishop(Target, occ) & Bishops;
+        }
+
+        if(pt == chess::PieceType::ROOK || pt == chess::PieceType::QUEEN){
+            NowAttacking |= chess::attacks::rook(Target, occ) & Rooks;
+        }
     }
 
-    // Undo the move
-    board.unmakeMove(move);
-
-    return netValue;
+    return EnemyColor != board.at(TargetOrigin).color();
 }

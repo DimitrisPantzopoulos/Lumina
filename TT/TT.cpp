@@ -42,3 +42,7 @@ bool Lumina::retrieveTTEntry(const uint64_t key, TTEntry &entry, int depth) {
 void Lumina::ClearTT(){
     TT.clear();
 }
+
+void Lumina::ClearKMT(){
+    KillerMoveTable.ClearKMT();
+}
