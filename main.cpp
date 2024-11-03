@@ -30,8 +30,8 @@ void uci_loop() {
         getline(cin, command);
 
         if (command == "uci") {
-            cout << "id name Dimibot" << endl;
-            cout << "id author Dimiboi" << endl;
+            cout << "id name Lumina" << endl;
+            cout << "id author Lumina" << endl;
             cout << "option name Threads type spin default 1 min 1 max 1" << endl;
 
             cout << "uciok" << endl;

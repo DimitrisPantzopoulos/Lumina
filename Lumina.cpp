@@ -11,12 +11,10 @@
 #include <atomic>
 #include <cmath>
 
-#define Infinity    9999999
-#define Ninfinity   -Infinity
 #define SEARCH_CANCELLED 0
 
-#define StartingPly 0
-#define ReduceDepth 2
+#define Infinity    9999999
+#define Ninfinity   -Infinity
 
 #define UPPERBOUND 1
 #define EXACT      2
@@ -24,10 +22,12 @@
 
 #define QSEARCHDEPTH 0
 
+#define StartingPly 0
+#define ReduceDepth 2
+
 #ifdef BENCHMARK
     int NODES_SEARCHED = 0;
 #endif
-
 
 void Timer(int Milliseconds, std::atomic<bool>& CanSearch){
     std::this_thread::sleep_for(std::chrono::milliseconds(Milliseconds));
@@ -63,9 +63,11 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
     chess::Movelist LegalMoves = OrderMoves(board, BestMove, 0);
 
     for (int PlyRemaining = 1; PlyRemaining < 256; PlyRemaining++) {
+        int eval;
+
         for (const auto &move : LegalMoves) {
             board.makeMove(move);
-            int eval = -Search(board, StartingPly, PlyRemaining, Ninfinity, Infinity, 0);
+            eval = -Search(board, StartingPly, PlyRemaining, Ninfinity, Infinity, 0);
             board.unmakeMove(move);
             
             if (eval > BestEval && CanSearch) {
@@ -103,20 +105,22 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
 }
 
 int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, int beta, int Extensions){
+    static const std::array<int, 5> QuietsToSearch = {0, 4, 5, 15, 25};
+    int QuietsSearched = QuietsToSearch[std::max(4, PlyRemaining)];
+
     #ifdef BENCHMARK
         NODES_SEARCHED++;
     #endif
 
     if(!CanSearch){return SEARCH_CANCELLED;}
-
     if(board.isRepetition(1)){return 0;}
 
     // TranspositionTable Lookup
     chess::Move BestMove = chess::Move::NO_MOVE;
     uint64_t key = board.zobrist();
     TTEntry ttEntry;
-
     int ttype = UPPERBOUND;
+    bool PVNode = beta - alpha > 1;
 
     if (retrieveTTEntry(key, ttEntry, PlyRemaining)){
         if        (ttEntry.nodeType == UPPERBOUND && ttEntry.value <= alpha) { return ttEntry.value; } // UPPERBOUND
@@ -179,6 +183,11 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
             BestMove = move;
             ttype    = EXACT;
         }
+
+        if(!PVNode && PlyRemaining <= 4 && !board.isCapture(move) && (QuietsSearched == 1 || eval + 127 * PlyRemaining < alpha))
+        {
+            break;
+        }
     }
 
     storeTTEntry(key, alpha, PlyRemaining, ttype, BestMove);
@@ -188,7 +197,7 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
 int Lumina::QSearch(Board& board, int alpha, int beta, int Ply){
     if(!CanSearch){return SEARCH_CANCELLED;}
 
-    //TranspositionTable Lookup
+    // TranspositionTable Lookup
     chess::Move BestMove = chess::Move::NO_MOVE;
     uint64_t key = board.zobrist();
     TTEntry ttEntry;
@@ -204,9 +213,9 @@ int Lumina::QSearch(Board& board, int alpha, int beta, int Ply){
 
     int eval = Evaluation(board, Ply);
 
-    if(eval >= beta) {return beta;}
+    if(eval >= beta) { return beta; }
 
-    alpha = std::max(alpha, eval);
+    if (eval > alpha){ alpha = eval; }
     
     // Generate Legal Moves
     chess::Movelist LegalMoves = OrderCaptures(board, BestMove);
@@ -232,7 +241,7 @@ int Lumina::QSearch(Board& board, int alpha, int beta, int Ply){
             BestMove = move;
             alpha = MoveEval;
             
-            // ttype = 2; // EXACT For some reason when I remove the Exact from the transposition table it gets better?
+            ttype = 2;
         }
     } 
 
