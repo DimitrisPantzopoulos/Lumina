@@ -105,9 +105,6 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
 }
 
 int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, int beta, int Extensions){
-    static const std::array<int, 5> QuietsToSearch = {0, 4, 5, 15, 25};
-    int QuietsSearched = QuietsToSearch[std::max(4, PlyRemaining)];
-
     #ifdef BENCHMARK
         NODES_SEARCHED++;
     #endif
@@ -182,11 +179,6 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
             alpha    = eval;
             BestMove = move;
             ttype    = EXACT;
-        }
-
-        if(!PVNode && PlyRemaining <= 4 && !board.isCapture(move) && (QuietsSearched == 1 || eval + 127 * PlyRemaining < alpha))
-        {
-            break;
         }
     }
 

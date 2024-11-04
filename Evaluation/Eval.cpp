@@ -9,6 +9,8 @@
 
 #define ImmediateMateScore 999999
 
+#define BISHOPPAIR 110
+
 int Evaluation(const chess::Board& board, int Ply){
     chess::GameResult State = board.isGameOver().second;
 
@@ -78,9 +80,6 @@ int Evaluation(const chess::Board& board, int Ply){
                 WhiteScore += EvaluateBishop(Sq, CombinedBitboard, BPawns, WPawns, BPawnsSq, BEndgameWeight, true);
                 WhiteBishops++;
             }
-            // else if(PieceType == chess::PieceType::QUEEN){
-            //     WhiteScore += EvaluateQueen(board, Sq, CombinedBitboard, BPawns, BKsq, true);
-            // }
 
         }else{
             BlackScore += (PiecesValue(PieceType) + PST(Board_at, index, WEndgameWeight));
@@ -95,21 +94,17 @@ int Evaluation(const chess::Board& board, int Ply){
                 BlackScore += EvaluateBishop(Sq, CombinedBitboard, WPawns, BPawns, WPawnsSq, WEndgameWeight, false);
                 BlackBishops++;
             }
-            // else if(PieceType == chess::PieceType::QUEEN){
-            //     BlackScore += EvaluateQueen(board, Sq, CombinedBitboard, WPawns, WKsq, true);
-            // }
         }
     }
 
-    WhiteScore += WhiteBishops > 1 ? 50 : 0;
-    BlackScore += BlackBishops > 1 ? 50 : 0;
+    WhiteScore += WhiteBishops > 1 ? BISHOPPAIR : 0;
+    BlackScore += BlackBishops > 1 ? BISHOPPAIR : 0;
 
     WhiteScore += EvaluateMobilityArea(board, WPawns, BPawnsSq, chess::Color::BLACK);
     BlackScore += EvaluateMobilityArea(board, BPawns, WPawnsSq, chess::Color::WHITE);
 
     WhiteScore += SafetyScore(WKsq, CombinedBitboard, WPawns, BEndgameWeight, true);
     BlackScore += SafetyScore(BKsq, CombinedBitboard, BPawns, WEndgameWeight, false);
-
 
     return (WhiteScore - BlackScore) * Perspective;
 }

@@ -35,42 +35,28 @@ chess::Bitboard SouthFill(chess::Bitboard PawnFile){
     return PawnFile;
 }
 
-#define PAWN_VALUE 226
-#define KNIGHT_VALUE 664
-#define BISHOP_VALUE 725
-#define ROOK_VALUE 1139
-#define QUEEN_VALUE 2331
-
-#define NOPAWNSHIELD -17
-#define VQUEENSCOREMG -11
-#define VQUEENSCOREEG 2
-
-//constexpr int PawnBonuses[] = {0, 271, 207, 122, 65, 36, 30};
-
-#define ISOLATEDPAWN -9
-#define DOUBLEDPAWN -4
-#define CENTREPAWN 17
-
-#define KNIGHTOUTPOST 74
-#define KNIGHTMOBILITY 15
-
-#define ROOKOPENFILE 47
-#define ROOKSEMIOPENFILE 15
-#define ROOKBACKRANK 42
+#define PAWN_VALUE 245
+#define KNIGHT_VALUE 915
+#define BISHOP_VALUE 961
+#define ROOK_VALUE 1608
+#define QUEEN_VALUE 3298
+#define NOPAWNSHIELD -13
+#define VQUEENSCOREMG -7
+#define VQUEENSCOREEG 6
+#define ISOLATEDPAWN -19
+#define DOUBLEDPAWN -37
+#define CENTREPAWN 18
+#define KNIGHTOUTPOST 52
+#define KNIGHTMOBILITY 26
+#define ROOKOPENFILE 50
+#define ROOKBACKRANK 109
 #define ROOKMOBILITYMG 6
 #define ROOKMOBILITYEG 7
-
-#define BISHOPOPENFILE 32
-#define BISHOPSEMIOPENFILE 11
-#define BISHOPNONFIXEDPAWNS -2
-#define BISHOPFIXEDPAWNS -2
-#define BISHOPMOBILITYMG 10
-#define BISHOPMOBILITYEG 12
-
-#define QUEENINFLITRATIONBONUS 43
-#define QUEENMOBILITY 19
-#define QUEENROOKFILE 38
-#define QUEENBISHOPDIAGONAL 53
+#define BISHOPOPENFILE 27
+#define BISHOPFIXEDPAWNS -20
+#define BISHOPMOBILITYMG 9
+#define BISHOPMOBILITYEG 11
+#define BISHOPPAIR 141
 
 int PiecesValue(const chess::PieceType& type){
     if (type == chess::PieceType::PAWN)        {return PAWN_VALUE;}
@@ -118,7 +104,7 @@ int SafetyScore(const chess::Square &KSq, const chess::Bitboard& occ ,const ches
 }
 
 int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &EnemyPawns, const chess::Bitboard &FriendPawns, bool isWhite) {
-    constexpr static std::array<int, 7> PawnBonuses = {0, 271, 207, 122, 65, 36, 30};
+    constexpr static std::array<int, 7> PawnBonuses = {0, 87, 193, 115, 56, -4, 1};
 
     static const uint64_t Msquares = 0x1818000000;
 
@@ -170,7 +156,7 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &EnemyPawns, con
         Score += DOUBLEDPAWN;
     }
     
-    //check if pawn is in the centre squares 
+    // Check if pawn is in the centre squares 
     if((currentPawnPosition & Msquares) != 0){
         Score += CENTREPAWN;
     }
@@ -230,9 +216,7 @@ int EvaluateRooks(const chess::Square &sq, const chess::Bitboard& oppPawns, cons
 
     //Check if the rook is on a open file
     if(((oppPawns | FriendPawns) & fileMask) == 0){
-        Score += ROOKOPENFILE ;
-    }else if((oppPawns & fileMask) == 0){
-        Score += ROOKSEMIOPENFILE;
+        Score += ROOKOPENFILE;
     }
 
     if(isWhite && sq.rank() == chess::Rank::RANK_7){
@@ -243,7 +227,7 @@ int EvaluateRooks(const chess::Square &sq, const chess::Bitboard& oppPawns, cons
 
     chess::Bitboard RookMoves = chess::attacks::rook(sq, occ);
     
-    Score += RookMoves.count() * static_cast<int>(weight * ROOKMOBILITYMG + (1.0f - weight) * ROOKMOBILITYEG);
+    Score += static_cast<int>(RookMoves.count() * (weight * ROOKMOBILITYMG + (1.0f - weight) * ROOKMOBILITYEG));
 
     return Score;
 }
@@ -276,8 +260,6 @@ int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const che
     //it could control a open diagonal and not be rewarded for it
     if((CombinedMask & BishopBitBoard).count() < 2){
         Score += BISHOPOPENFILE;
-    }else if((oppPawns & BishopBitBoard & BForward).count() < 2){
-        Score += BISHOPSEMIOPENFILE;
     }
 
     // //Detect Bad Bishop
@@ -312,70 +294,10 @@ int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const che
         }
     }
 
-    //Use the forward mobility to calulate what a punishment should be for this closed position
-    //Calculate the total number of non fixed pawns in the position
-    Score += (NoOfPawns - NoOfFixedPawns) * BISHOPNONFIXEDPAWNS;
-    
     //Fixed Pawns are harder to get rid of so we should make them twice as bad
     Score += NoOfFixedPawns * BISHOPFIXEDPAWNS;
 
-    Score += (BishopBitBoard & ~EnemyPawnsSq).count() * static_cast<int>(weight * BISHOPMOBILITYMG + (1.0f - weight) * BISHOPMOBILITYEG);
-
-    return Score;
-}
-
-int EvaluateQueen(const chess::Board& board, const chess::Square &sq, chess::Bitboard& occ, chess::Bitboard& EnemyPawns, chess::Square Ksq, bool isWhite) {
-    static const std::array<uint64_t, 15> Diagonals = {0x0000000000000080, 0x0000000000008040, 0x0000000000804020, 0x0000000080402010, 0x0000008040201008, 0x0000804020100804, 0x0080402010080402, 0x8040201008040201, 0x4020100804020100, 0x2010080402010000, 0x1008040201000000, 0x0804020100000000, 0x0402010000000000, 0x0201000000000000, 0x0100000000000000};
-    static const std::array<uint64_t, 15> AntiDiagonals = {0x0000000000000001, 0x0000000000000102, 0x0000000000010204, 0x0000000001020408, 0x0000000102040810, 0x0000010204081020,0x0001020408102040, 0x0102040810204080,0x0204081020408000,0x0408102040800000,0x0810204080000000,0x1020408000000000, 0x2040800000000000,0x4080000000000000, 0x8000000000000000};
-    
-    int Score = 0;
-    
-    Score += chess::attacks::queen(sq, occ).count() * QUEENMOBILITY;
-
-    //Calculate the enemy pawn span
-    if(isWhite){
-        chess::Bitboard BRearSpan = chess::Bitboard(0ULL);
-
-        for (int i=1; i<8; i++) {
-            uint64_t fileMask = 0x0101010101010101ULL << i;
-            BRearSpan |= (NorthFill(chess::Bitboard(fileMask) & EnemyPawns));
-        }
-
-        if((BRearSpan & chess::Bitboard(sq.index())) != 0){
-            Score += QUEENINFLITRATIONBONUS; //Infiltration bonus
-        }
-
-    }else{
-        chess::Bitboard WRearSpan = chess::Bitboard(0ULL);
-
-        for (int i=0; i<8; i++) {
-            uint64_t fileMask = 0x0101010101010101ULL << i;
-            WRearSpan |= (SouthFill(chess::Bitboard(fileMask) & EnemyPawns));
-        }
-
-        if((WRearSpan & chess::Bitboard(sq.index())) != 0){
-            Score += QUEENINFLITRATIONBONUS; //Infiltration bonus
-        }
-    }
-    
-    //Check if the queen is coordinating with other pieces
-    chess::Bitboard Bishops = board.pieces(chess::PieceType::BISHOP, isWhite ? chess::Color::WHITE : chess::Color::BLACK);
-    chess::Bitboard Rooks = board.pieces(chess::PieceType::ROOK, isWhite ? chess::Color::WHITE : chess::Color::BLACK);
-
-    //Get the queens file bitboard
-    chess::Bitboard QFile(0x0101010101010101ULL << sq.file());
-
-    //See if its on the same file as a rook and are coordinating
-    Score += (QFile & Rooks).count() * QUEENROOKFILE;
-    
-    //See if its on the same diagonal as the bishops and are coordinating
-    if((Bishops & chess::Bitboard(Diagonals[sq.antidiagonal_of()])) != 0){
-        Score += QUEENBISHOPDIAGONAL;
-    }
-
-    if((Bishops & chess::Bitboard(AntiDiagonals[sq.diagonal_of()]))){
-        Score += QUEENBISHOPDIAGONAL;
-    }
+    Score += static_cast<int>((BishopBitBoard & ~EnemyPawnsSq).count() * (weight * BISHOPMOBILITYMG + (1.0f - weight) * BISHOPMOBILITYEG));;
 
     return Score;
 }
