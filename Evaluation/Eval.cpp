@@ -100,8 +100,8 @@ int Evaluation(const chess::Board& board, int Ply){
     WhiteScore += WhiteBishops > 1 ? BISHOPPAIR : 0;
     BlackScore += BlackBishops > 1 ? BISHOPPAIR : 0;
 
-    WhiteScore += EvaluateMobilityArea(board, WPawns, BPawnsSq, chess::Color::BLACK);
-    BlackScore += EvaluateMobilityArea(board, BPawns, WPawnsSq, chess::Color::WHITE);
+    // WhiteScore += EvaluateMobilityArea(board, WPawns, BPawnsSq, chess::Color::BLACK);
+    // BlackScore += EvaluateMobilityArea(board, BPawns, WPawnsSq, chess::Color::WHITE);
 
     WhiteScore += SafetyScore(WKsq, CombinedBitboard, WPawns, BEndgameWeight, true);
     BlackScore += SafetyScore(BKsq, CombinedBitboard, BPawns, WEndgameWeight, false);

@@ -301,23 +301,3 @@ int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const che
 
     return Score;
 }
-
-int EvaluateMobilityArea(const chess::Board& board, chess::Bitboard& FriendlyPawns, chess::Bitboard& EnemyPawnAttacks, chess::Color EnemyColor){
-    chess::Bitboard EnemyKingIndex(1ULL << board.kingSq(EnemyColor).index());
-
-    chess::Bitboard MobilityArea(0xFFFFFFFFFFFFFFFFULL);
-
-    if (EnemyColor == chess::Color::WHITE) {
-        chess::Bitboard BlockedPawns = FriendlyPawns & (FriendlyPawns << 8);
-        MobilityArea &= ~BlockedPawns;
-    } else {
-        chess::Bitboard BlockedPawns = FriendlyPawns & (FriendlyPawns >> 8);
-        MobilityArea &= ~BlockedPawns;
-    }
-
-    MobilityArea &= ~FriendlyPawns;
-    MobilityArea &= ~EnemyPawnAttacks;
-    MobilityArea &= ~EnemyKingIndex;
-
-    return MobilityArea.count();
-}
