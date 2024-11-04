@@ -1,15 +1,16 @@
 #include "..\ChessLib\chess-library-master\include\chess.hpp"
 #include "..\PST\PST.h"
 #include "..\Helper\HelperFunctions.h"
-#include "EvalHelp.h"
 
+#include "EvalHelp.h"
 #include "Eval.h"
+
 #include <map>
-#include <iostream>
+
 
 #define ImmediateMateScore 999999
 
-#define BISHOPPAIR 110
+#define BISHOPPAIR 141
 
 int Evaluation(const chess::Board& board, int Ply){
     chess::GameResult State = board.isGameOver().second;
@@ -51,7 +52,7 @@ int Evaluation(const chess::Board& board, int Ply){
     int endgameW = WhiteBitboard.count();
     int endgameB = BlackBitboard.count();
 
-    //Calculate the weight for endgame influence
+    // Calculate the weight for endgame influence
     float WEndgameWeight = static_cast<float>(endgameB) / 32.0f; //Get the Weight form the oppositios's side to know when to get aggresive
     float BEndgameWeight = static_cast<float>(endgameW) / 32.0f;
 
@@ -99,9 +100,6 @@ int Evaluation(const chess::Board& board, int Ply){
 
     WhiteScore += WhiteBishops > 1 ? BISHOPPAIR : 0;
     BlackScore += BlackBishops > 1 ? BISHOPPAIR : 0;
-
-    // WhiteScore += EvaluateMobilityArea(board, WPawns, BPawnsSq, chess::Color::BLACK);
-    // BlackScore += EvaluateMobilityArea(board, BPawns, WPawnsSq, chess::Color::WHITE);
 
     WhiteScore += SafetyScore(WKsq, CombinedBitboard, WPawns, BEndgameWeight, true);
     BlackScore += SafetyScore(BKsq, CombinedBitboard, BPawns, WEndgameWeight, false);

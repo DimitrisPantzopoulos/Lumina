@@ -56,7 +56,6 @@ chess::Bitboard SouthFill(chess::Bitboard PawnFile){
 #define BISHOPFIXEDPAWNS -20
 #define BISHOPMOBILITYMG 9
 #define BISHOPMOBILITYEG 11
-#define BISHOPPAIR 141
 
 int PiecesValue(const chess::PieceType& type){
     if (type == chess::PieceType::PAWN)        {return PAWN_VALUE;}
