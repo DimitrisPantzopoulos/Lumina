@@ -35,35 +35,44 @@ chess::Bitboard SouthFill(chess::Bitboard PawnFile){
     return PawnFile;
 }
 
-#define PAWN_VALUE 245
-#define KNIGHT_VALUE 915
-#define BISHOP_VALUE 961
-#define ROOK_VALUE 1608
-#define QUEEN_VALUE 3298
+#define PAWN_VALUE 267
+#define KNIGHT_VALUE 958
+#define BISHOP_VALUE 991
+#define ROOK_VALUE 1642
+#define QUEEN_VALUE 3361
 #define NOPAWNSHIELD -13
 #define VQUEENSCOREMG -7
 #define VQUEENSCOREEG 6
+
 #define ISOLATEDPAWN -19
-#define DOUBLEDPAWN -37
-#define CENTREPAWN 18
-#define KNIGHTOUTPOST 52
+#define DOUBLEDPAWN -36
+#define CENTREPAWN 14
+#define CONNECTEDPAWNBONUS 10
+#define PHALANXBONUS 4
+
+#define KNIGHTOUTPOST 51
 #define KNIGHTMOBILITY 26
-#define ROOKOPENFILE 50
-#define ROOKBACKRANK 109
+
+#define ROOKOPENFILE 49
+#define ROOKBACKRANK 100
 #define ROOKMOBILITYMG 6
 #define ROOKMOBILITYEG 7
-#define BISHOPOPENFILE 27
-#define BISHOPFIXEDPAWNS -20
+
+#define BISHOPOPENFILE 29
+#define BISHOPFIXEDPAWNS -21
 #define BISHOPMOBILITYMG 9
 #define BISHOPMOBILITYEG 11
 
-int PiecesValue(const chess::PieceType& type){
-    if (type == chess::PieceType::PAWN)        {return PAWN_VALUE;}
-    else if (type == chess::PieceType::KNIGHT) {return KNIGHT_VALUE;}
-    else if (type == chess::PieceType::BISHOP) {return BISHOP_VALUE;}
-    else if (type == chess::PieceType::ROOK)   {return ROOK_VALUE;}
-    else if (type == chess::PieceType::QUEEN)  {return QUEEN_VALUE;}
+#define QUEENMOBILITY 11
+#define QUEENMIDDLESQUAREPRESSURE 8
+#define QUEENDISTANCE 5
 
+int PiecesValue(const chess::PieceType& PieceType){
+    if (PieceType == chess::PieceType::PAWN)        {return PAWN_VALUE;}
+    else if (PieceType == chess::PieceType::KNIGHT) {return KNIGHT_VALUE;}
+    else if (PieceType == chess::PieceType::BISHOP) {return BISHOP_VALUE;}
+    else if (PieceType == chess::PieceType::ROOK)   {return ROOK_VALUE;}
+    else if (PieceType == chess::PieceType::QUEEN)  {return QUEEN_VALUE;}
     return 0;
 }
 
@@ -97,13 +106,11 @@ int SafetyScore(const chess::Square &KSq, const chess::Bitboard& occ ,const ches
     //Virtual Queen Score 
     SafetyScore += chess::attacks::queen(KSq, occ).count() * static_cast<int>(weight * VQUEENSCOREMG + (1 - weight) * VQUEENSCOREEG);
 
-    //Find how many pieces are threatening the king ring
-
     return SafetyScore;
 }
 
 int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &EnemyPawns, const chess::Bitboard &FriendPawns, bool isWhite) {
-    constexpr static std::array<int, 7> PawnBonuses = {0, 87, 193, 115, 56, -4, 1};
+    constexpr static std::array<int, 7> PawnBonuses = {0, 89, 195, 117, 56, -5, 3};
 
     static const uint64_t Msquares = 0x1818000000;
 
@@ -159,11 +166,11 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &EnemyPawns, con
     if((currentPawnPosition & Msquares) != 0){
         Score += CENTREPAWN;
     }
-
+    
     return Score;
 }
 
-int EvaluateKnight(const chess::Square &sq, const chess::Bitboard& oppPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& SCBEP, bool isWhite){
+int EvaluateKnight(const chess::Square &sq, const chess::Bitboard& EnemyPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& SCBEP, bool isWhite){
     //We want Knights to be on outposts in the middle so they can control as many squares as possible
     //and basically harrass the other side
     int file = sq.file();
@@ -192,12 +199,12 @@ int EvaluateKnight(const chess::Square &sq, const chess::Bitboard& oppPawns, con
 
     int Score = 0;
 
-    //See if a knight is on a outpost
-    if (((KnightBits & oppPawns.getBits()) == 0) && ((KBackward & FriendPawns.getBits()) != 0)) {
+    // See if a knight is on a outpost
+    if (((KnightBits & EnemyPawns.getBits()) == 0) && ((KBackward & FriendPawns.getBits()) != 0)) {
         Score += KNIGHTOUTPOST;
     }
 
-    //Check Knight mobility but disregard squares that pawns are on
+    // Check Knight mobility but disregard squares that pawns are on
     chess::Bitboard KnightMoves = chess::attacks::knight(sq);
 
     Score += (KnightMoves & ~SCBEP).count() * KNIGHTMOBILITY;
@@ -205,7 +212,7 @@ int EvaluateKnight(const chess::Square &sq, const chess::Bitboard& oppPawns, con
     return Score;
 }
 
-int EvaluateRooks(const chess::Square &sq, const chess::Bitboard& oppPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& occ,float weight ,bool isWhite){
+int EvaluateRooks(const chess::Square &sq, const chess::Bitboard& EnemyPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& occ,float weight, bool isWhite){
     int Score = 0;
 
     //Get the file the rook is on and make it into a bitboard
@@ -214,7 +221,7 @@ int EvaluateRooks(const chess::Square &sq, const chess::Bitboard& oppPawns, cons
     uint64_t fileMask = 0x0101010101010101ULL << file;
 
     //Check if the rook is on a open file
-    if(((oppPawns | FriendPawns) & fileMask) == 0){
+    if(((EnemyPawns | FriendPawns) & fileMask) == 0){
         Score += ROOKOPENFILE;
     }
 
@@ -231,7 +238,7 @@ int EvaluateRooks(const chess::Square &sq, const chess::Bitboard& oppPawns, cons
     return Score;
 }
 
-int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const chess::Bitboard& oppPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& EnemyPawnsSq, float weight, bool isWhite){
+int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const chess::Bitboard& EnemyPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& EnemyPawnsSq, float weight, bool isWhite){
     static const chess::Bitboard LIGHT_SQUARES= chess::Bitboard(0x55AA55AA55AA55AAULL);
     static const chess::Bitboard DARK_SQUARES = chess::Bitboard(0xAA55AA55AA55AA55ULL);
 
@@ -239,10 +246,10 @@ int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const che
     
     int rank = sq.rank();
 
-    //Create a combined mask which has both friendly and opposition pawns
-    chess::Bitboard CombinedMask = FriendPawns | oppPawns;
+    // Create a combined mask which has both friendly and opposition pawns
+    chess::Bitboard CombinedMask = FriendPawns | EnemyPawns;
 
-    //Create a forwards mask to delete all behind moves
+    // Create a forwards mask to delete all behind moves
     chess::Bitboard BForward;
 
     if (isWhite) {
@@ -251,52 +258,70 @@ int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const che
         BForward = 0xFFFFFFFFFFFFFFFFULL >> ((rank) * 8);
     }
 
-    //Combine Backwards and BishopBitboard to have only the forwards moves
+    // Combine Backwards and BishopBitboard to have only the forwards moves
     int Score = 0;
 
-    //Check if bishop controls a open diagonal
-    //The reason for < 2 is because the bishop can only control max 2 open diagonals if i didnt do this
-    //it could control a open diagonal and not be rewarded for it
+    // Check if bishop controls a open diagonal
+    // The reason for < 2 is because the bishop can only control max 2 open diagonals if i didnt do this
+    // it could control a open diagonal and not be rewarded for it
     if((CombinedMask & BishopBitBoard).count() < 2){
         Score += BISHOPOPENFILE;
     }
 
-    // //Detect Bad Bishop
+    // Detect Bad Bishop
     int NoOfFixedPawns;
     int NoOfPawns;
 
-    //Is bishop light or dark squared?
+    // Is bishop light or dark squared?
     if((chess::Bitboard(1ULL << sq.index()) & LIGHT_SQUARES) != 0){
-        //If its a light squared bishop
+        // If its a light squared bishop
 
-        //Find how many total pawns there are blocking the bishop
+        // Find how many total pawns there are blocking the bishop
         chess::Bitboard WhiteSquaredPawns = (LIGHT_SQUARES & FriendPawns) & BForward;
         NoOfPawns = (WhiteSquaredPawns).count();
 
-        //Find out how many Fixed pawns Pawns that dont move are in the position
+        // Find out how many Fixed pawns Pawns that dont move are in the position
         if(isWhite){
-            NoOfFixedPawns = ((WhiteSquaredPawns << 8) & oppPawns).count();
+            NoOfFixedPawns = ((WhiteSquaredPawns << 8) & EnemyPawns).count();
         }else{
-            NoOfFixedPawns = ((WhiteSquaredPawns >> 8) & oppPawns).count();
+            NoOfFixedPawns = ((WhiteSquaredPawns >> 8) & EnemyPawns).count();
         }
 
     }else{
-        //Find how many total pawns there are blocking the bishop
+        // Find how many total pawns there are blocking the bishop
         chess::Bitboard BlackSquaredPawns = (DARK_SQUARES & FriendPawns) & BForward;
         NoOfPawns = (BlackSquaredPawns).count();
 
-        //Find out how many Fixed pawns Pawns that dont move are in the position
+        // Find out how many Fixed pawns Pawns that dont move are in the position
         if(isWhite){
-            NoOfFixedPawns = ((BlackSquaredPawns << 8) & oppPawns).count();
+            NoOfFixedPawns = ((BlackSquaredPawns << 8) & EnemyPawns).count();
         }else{
-            NoOfFixedPawns = ((BlackSquaredPawns >> 8) & oppPawns).count();
+            NoOfFixedPawns = ((BlackSquaredPawns >> 8) & EnemyPawns).count();
         }
     }
 
-    //Fixed Pawns are harder to get rid of so we should make them twice as bad
+    // Fixed Pawns are harder to get rid of so we should make them twice as bad
     Score += NoOfFixedPawns * BISHOPFIXEDPAWNS;
 
     Score += static_cast<int>((BishopBitBoard & ~EnemyPawnsSq).count() * (weight * BISHOPMOBILITYMG + (1.0f - weight) * BISHOPMOBILITYEG));;
+
+    return Score;
+}
+
+int EvaluateQueen(const chess::Board& board, const chess::Bitboard& EnemyPawns, const chess::Bitboard occ, const chess::Square &sq, const chess::Color EnemyColor){
+    static const chess::Bitboard Msquares = chess::Bitboard(0x1818000000ULL);
+
+    int Score = 0;
+
+    // Count mobility
+    chess::Bitboard QueenMobility = chess::attacks::queen(sq, occ);
+    Score += QueenMobility.count() * QUEENMOBILITY;
+
+    // Pressure on Middle Squares
+    Score += (QueenMobility & Msquares).count() * QUEENMIDDLESQUAREPRESSURE;
+
+    // Calculate distance to king to see how big of a threat it is to king safety
+    Score += static_cast<int>(1 / (chess::Square::distance(sq, board.kingSq(EnemyColor))) * QUEENDISTANCE);
 
     return Score;
 }

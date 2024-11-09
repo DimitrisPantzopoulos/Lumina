@@ -4,9 +4,7 @@
 
 #include "EvalHelp.h"
 #include "Eval.h"
-
 #include <map>
-
 
 #define ImmediateMateScore 999999
 
@@ -53,7 +51,7 @@ int Evaluation(const chess::Board& board, int Ply){
     int endgameB = BlackBitboard.count();
 
     // Calculate the weight for endgame influence
-    float WEndgameWeight = static_cast<float>(endgameB) / 32.0f; //Get the Weight form the oppositios's side to know when to get aggresive
+    float WEndgameWeight = static_cast<float>(endgameB) / 32.0f; //Get the Weight form the opposition's side to know when to get aggresive
     float BEndgameWeight = static_cast<float>(endgameW) / 32.0f;
 
     chess::Square WKsq = board.kingSq(chess::Color::WHITE);
@@ -80,6 +78,8 @@ int Evaluation(const chess::Board& board, int Ply){
             }else if(PieceType == chess::PieceType::BISHOP){
                 WhiteScore += EvaluateBishop(Sq, CombinedBitboard, BPawns, WPawns, BPawnsSq, BEndgameWeight, true);
                 WhiteBishops++;
+            }else if(PieceType == chess::PieceType::QUEEN){
+                WhiteScore += EvaluateQueen(board, BPawns, CombinedBitboard, Sq, chess::Color::BLACK);
             }
 
         }else{
@@ -94,6 +94,8 @@ int Evaluation(const chess::Board& board, int Ply){
             }else if(PieceType == chess::PieceType::BISHOP){
                 BlackScore += EvaluateBishop(Sq, CombinedBitboard, WPawns, BPawns, WPawnsSq, WEndgameWeight, false);
                 BlackBishops++;
+            }else if(PieceType == chess::PieceType::QUEEN){
+                BlackScore += EvaluateQueen(board, WPawns, CombinedBitboard, Sq, chess::Color::WHITE);
             }
         }
     }

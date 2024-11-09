@@ -39,9 +39,6 @@ class Lumina {
         Lumina(){
             std::srand(static_cast<unsigned int>(std::time(nullptr)));
         }
-
-        bool FutilityAllowed = true;
-        int FutilityMargin = 120;
 };
 
 #endif

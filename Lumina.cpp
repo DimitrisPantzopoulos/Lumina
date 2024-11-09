@@ -125,7 +125,7 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
         else if   (ttEntry.nodeType == LOWERBOUND && ttEntry.value >= beta)  { return ttEntry.value; } // LOWERBOUND
 
         BestMove = ttEntry.bestMove;
-    }
+    }else if(PlyRemaining >= 3){PlyRemaining--;}
 
     chess::GameResult State = board.isGameOver().second;
 
