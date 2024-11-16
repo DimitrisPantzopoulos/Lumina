@@ -1,7 +1,7 @@
 #include "..\ChessLib\chess-library-master\include\chess.hpp"
-#include "..\Evaluation\Eval.h"
 #include "..\Helper\SEE.h"
 #include "..\Lumina.h"
+#include "..\Helper\HelperFunctions.h"
 
 #include <algorithm>
 #include <vector>

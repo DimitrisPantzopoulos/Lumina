@@ -1,5 +1,4 @@
 #include "..\ChessLib\chess-library-master\include\chess.hpp"
-#include "..\Evaluation\Eval.h"
 #include "HelperFunctions.h"
 
 //|--------------------------------------------------------------------------------------------------|

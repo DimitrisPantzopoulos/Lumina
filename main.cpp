@@ -32,7 +32,7 @@ void uci_loop() {
         if (command == "uci") {
             cout << "id name Lumina" << endl;
             cout << "id author Lumina" << endl;
-            cout << "option name Threads type spin default 1 min 1 max 1" << endl;
+            //cout << "option name Threads type spin default 1 min 1 max 1" << endl;
 
             cout << "uciok" << endl;
         }
@@ -141,7 +141,7 @@ void uci_loop() {
 }
 
 int main() {
-    LoadOpeningBook(book, "Book/Book.txt");
+    //LoadOpeningBook(book, "Book/Book.txt");
     uci_loop();
 
     return 0;

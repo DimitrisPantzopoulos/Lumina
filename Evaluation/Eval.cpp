@@ -1,6 +1,6 @@
 #include "..\ChessLib\chess-library-master\include\chess.hpp"
-#include "..\PST\PST.h"
 #include "..\Helper\HelperFunctions.h"
+#include "..\PST\PST.h"
 
 #include "EvalHelp.h"
 #include "Eval.h"
@@ -8,9 +8,10 @@
 
 #define ImmediateMateScore 999999
 
-#define BISHOPPAIR 141
+#define BISHOPPAIR_MG 79.9666f
+#define BISHOPPAIR_EG 69.9666f
 
-int Evaluation(const chess::Board& board, int Ply){
+float Evaluation(const chess::Board& board, int Ply){
     chess::GameResult State = board.isGameOver().second;
 
     if(State != chess::GameResult::NONE){
@@ -41,8 +42,8 @@ int Evaluation(const chess::Board& board, int Ply){
     //to check a constant 64 squares
     std::vector<uint8_t> Indexes = GetIndexesFromBitBoard(CombinedBitboard);
 
-    int WhiteScore = 0;
-    int BlackScore = 0;
+    float WhiteScore = 0.0f;
+    float BlackScore = 0.0f;
 
     int WhiteBishops = 0;
     int BlackBishops = 0;
@@ -67,41 +68,41 @@ int Evaluation(const chess::Board& board, int Ply){
         chess::PieceType PieceType = Board_at.type();
 
         if(Color){
-            WhiteScore += (PiecesValue(PieceType) + PST(Board_at, index, BEndgameWeight));
+            WhiteScore += PiecesValueEval(PieceType, BEndgameWeight) + PST(Board_at, index, BEndgameWeight);
 
             if(PieceType == chess::PieceType::PAWN){
-                WhiteScore += EvaluatePawn(Sq, BPawns, WPawns, true);
+                WhiteScore += EvaluatePawn(Sq, BPawns, WPawns, BEndgameWeight, true);
             }else if(PieceType == chess::PieceType::KNIGHT){
-                WhiteScore += EvaluateKnight(Sq, BPawns, WPawns, BPawnsSq, true);
+                WhiteScore += EvaluateKnight(Sq, BPawns, WPawns, BPawnsSq, BEndgameWeight, true);
             }else if(PieceType == chess::PieceType::ROOK){
                 WhiteScore += EvaluateRooks(Sq, BPawns, WPawns, CombinedBitboard, BEndgameWeight, true);
             }else if(PieceType == chess::PieceType::BISHOP){
                 WhiteScore += EvaluateBishop(Sq, CombinedBitboard, BPawns, WPawns, BPawnsSq, BEndgameWeight, true);
                 WhiteBishops++;
             }else if(PieceType == chess::PieceType::QUEEN){
-                WhiteScore += EvaluateQueen(board, BPawns, CombinedBitboard, Sq, chess::Color::BLACK);
+                WhiteScore += EvaluateQueen(board, BPawns, CombinedBitboard, Sq, chess::Color::BLACK, BEndgameWeight);
             }
 
         }else{
-            BlackScore += (PiecesValue(PieceType) + PST(Board_at, index, WEndgameWeight));
+            BlackScore += PiecesValueEval(PieceType, WEndgameWeight) + PST(Board_at, index, WEndgameWeight);
 
             if(PieceType == chess::PieceType::PAWN){
-                BlackScore += EvaluatePawn(Sq, WPawns, BPawns, false);
+                BlackScore += EvaluatePawn(Sq, WPawns, BPawns, WEndgameWeight, false);
             }else if(PieceType == chess::PieceType::KNIGHT){
-                BlackScore += EvaluateKnight(Sq, WPawns, BPawns, WPawnsSq, false);
+                BlackScore += EvaluateKnight(Sq, WPawns, BPawns, WPawnsSq, WEndgameWeight, false);
             }else if(PieceType == chess::PieceType::ROOK){
                 BlackScore += EvaluateRooks(Sq, WPawns, BPawns, CombinedBitboard, WEndgameWeight, false);
             }else if(PieceType == chess::PieceType::BISHOP){
                 BlackScore += EvaluateBishop(Sq, CombinedBitboard, WPawns, BPawns, WPawnsSq, WEndgameWeight, false);
                 BlackBishops++;
             }else if(PieceType == chess::PieceType::QUEEN){
-                BlackScore += EvaluateQueen(board, WPawns, CombinedBitboard, Sq, chess::Color::WHITE);
+                BlackScore += EvaluateQueen(board, WPawns, CombinedBitboard, Sq, chess::Color::WHITE, WEndgameWeight);
             }
         }
     }
 
-    WhiteScore += WhiteBishops > 1 ? BISHOPPAIR : 0;
-    BlackScore += BlackBishops > 1 ? BISHOPPAIR : 0;
+    WhiteScore += WhiteBishops > 1 ? TaperedEvaluation(BEndgameWeight, BISHOPPAIR_MG, BISHOPPAIR_EG) : 0;
+    BlackScore += BlackBishops > 1 ? TaperedEvaluation(WEndgameWeight, BISHOPPAIR_MG, BISHOPPAIR_EG) : 0;
 
     WhiteScore += SafetyScore(WKsq, CombinedBitboard, WPawns, BEndgameWeight, true);
     BlackScore += SafetyScore(BKsq, CombinedBitboard, BPawns, WEndgameWeight, false);

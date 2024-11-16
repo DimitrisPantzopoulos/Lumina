@@ -7,8 +7,6 @@
 
 #include <vector>
 
-#define Infinity 9999999
-
 bool SEE(const chess::Board& board, const chess::Move& move, const int Threshold); //TODO: FIND THE CORRECT THRESHOLD
 
 #endif

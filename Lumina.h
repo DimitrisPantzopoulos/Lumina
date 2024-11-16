@@ -28,10 +28,10 @@ class Lumina {
         Movelist OrderCaptures(Board& board, Move& HashMove);
 
         Move Think(Board& board, int Milliseconds);
-        int Search(chess::Board& board, int Ply ,int PlyRemaining, int alpha, int beta, int Extensions);
-        int QSearch(Board& board, int alpha, int beta, int Ply);
+        float Search(chess::Board& board, int Ply, int PlyRemaining, float alpha, float beta, int Extensions);
+        float QSearch(Board& board, float alpha, float beta, int Ply);
 
-        void storeTTEntry(const uint64_t key, int value, int depth, int nodeType, chess::Move bestMove);
+        void storeTTEntry(const uint64_t key, float value, int depth, int nodeType, chess::Move bestMove);
         bool retrieveTTEntry(const uint64_t key, TTEntry &entry, int depth);
         void ClearTT();
         void ClearKMT();

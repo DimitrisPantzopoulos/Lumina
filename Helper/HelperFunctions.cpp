@@ -31,3 +31,17 @@ chess::Color OppositeColor(chess::Color color){
     return color == chess::Color::WHITE ? chess::Color::BLACK : chess::Color::WHITE;
 }
 
+int PiecesValue(const chess::PieceType& PieceType){
+    if (PieceType == chess::PieceType::PAWN)        {return 267;}
+    else if (PieceType == chess::PieceType::KNIGHT) {return 958;}
+    else if (PieceType == chess::PieceType::BISHOP) {return 991;}
+    else if (PieceType == chess::PieceType::ROOK)   {return 1642;}
+    else if (PieceType == chess::PieceType::QUEEN)  {return 3361;}
+    return 0;
+}
+
+float TaperedEvaluation(float& weight, float WeightMG, float WeightEG){
+    return weight * WeightMG + (1 - weight) * WeightEG;
+}
+
+

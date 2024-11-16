@@ -8,8 +8,7 @@
 using namespace chess;
 using namespace std;
 
-int Evaluation(const Board& board, int Ply);
-int PiecesValue(const chess::PieceType& type);
+float Evaluation(const Board& board, int Ply);
 
 #endif
 
