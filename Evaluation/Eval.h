@@ -8,7 +8,7 @@
 using namespace chess;
 using namespace std;
 
-float Evaluation(const Board& board, int Ply);
+int Evaluation(const Board& board, int Ply);
 
 #endif
 

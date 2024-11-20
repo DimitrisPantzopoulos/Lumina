@@ -6,7 +6,7 @@
 #include <vector>
 
 struct TTEntry {
-    float value;                 // Evaluation score
+    int value;                   // Evaluation score
     int depth;                   // Depth of the search when this position was evaluated
     int nodeType;                // Type of node (upperbound, exact, lowerbound) (1, 2, 3) respectively
     chess::Move bestMove;        // Best move found from this position

@@ -8,10 +8,10 @@
 
 #define ImmediateMateScore 999999
 
-#define BISHOPPAIR_MG 79.9666f
-#define BISHOPPAIR_EG 69.9666f
+#define BISHOPPAIR_MG 79
+#define BISHOPPAIR_EG 69
 
-float Evaluation(const chess::Board& board, int Ply){
+int Evaluation(const chess::Board& board, int Ply){
     chess::GameResult State = board.isGameOver().second;
 
     if(State != chess::GameResult::NONE){
@@ -42,8 +42,8 @@ float Evaluation(const chess::Board& board, int Ply){
     //to check a constant 64 squares
     std::vector<uint8_t> Indexes = GetIndexesFromBitBoard(CombinedBitboard);
 
-    float WhiteScore = 0.0f;
-    float BlackScore = 0.0f;
+    int WhiteScore = 0;
+    int BlackScore = 0;
 
     int WhiteBishops = 0;
     int BlackBishops = 0;

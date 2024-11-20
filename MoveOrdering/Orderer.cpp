@@ -68,7 +68,7 @@ chess::Movelist Lumina::OrderMoves(chess::Board& board, chess::Move& HashMove, c
             Score += SEE(board, move, 0) ? CAPTURE_SCORE + (VictimScore - AttackerScore) : (VictimScore - AttackerScore);
         }
 
-        // Promotions are likely to be good
+        // // Promotions are likely to be good
         else if(move.typeOf() == chess::Move::PROMOTION){
             chess::PieceType PromotionType = move.promotionType();
             Score += PiecesValue(PromotionType);
@@ -122,7 +122,7 @@ chess::Movelist Lumina::OrderCaptures(chess::Board& board, chess::Move& HashMove
         }
 
         // MVV-LVA + SEE
-        Score += CAPTURE_SCORE + (VictimScore - AttackerScore);
+        Score += SEE(board, move, 0) ? CAPTURE_SCORE + (VictimScore - AttackerScore) : (VictimScore - AttackerScore);
         
         if (Score >= 0){
             ScoredMoves.push_back({move, Score});

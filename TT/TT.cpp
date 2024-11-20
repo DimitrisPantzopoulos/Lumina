@@ -4,7 +4,7 @@
 
 #define MAX_TT_SIZE 4194304 //64 MB limit
 
-void Lumina::storeTTEntry(const uint64_t key, float value, int depth, int nodeType, chess::Move bestMove) {
+void Lumina::storeTTEntry(const uint64_t key, int value, int depth, int nodeType, chess::Move bestMove) {
     auto it = TT.find(key);
     
     if (it != TT.end()) {

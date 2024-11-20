@@ -10,5 +10,5 @@ void PopLsb(uint64_t& bitboard);
 std::vector<uint8_t> GetIndexesFromBitBoard(const chess::Bitboard& Bitboard);
 chess::Color OppositeColor(chess::Color color);
 int PiecesValue(const chess::PieceType& PieceType);
-float TaperedEvaluation(float& weight, float WeightMG, float WeightEG);
+int TaperedEvaluation(float& weight, float WeightMG, float WeightEG);
 #endif

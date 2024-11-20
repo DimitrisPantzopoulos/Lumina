@@ -96,8 +96,7 @@ static const array<int, 64> eg_king_table = {
     -302, -104, -58, -47, -46, -97, -131, -282
 };
 
-
-float PST(const Piece &piece, int squareIndex, float& endgameWeight)
+int PST(const Piece &piece, int squareIndex, float& endgameWeight)
 {
     PieceType pieceType = piece.type();
     Color PieceColor = piece.color();

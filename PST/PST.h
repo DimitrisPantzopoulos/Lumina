@@ -8,6 +8,6 @@
 using namespace chess;
 using namespace std;
 
-float PST(const Piece &piece, int squareIndex, float& endgameWeight);
+int PST(const Piece &piece, int squareIndex, float& endgameWeight);
 
 #endif

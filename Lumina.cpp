@@ -9,11 +9,10 @@
 #include <chrono>
 #include <thread>
 #include <atomic>
-#include <cmath>
 
-#define SEARCH_CANCELLED 0.0f
+#define SEARCH_CANCELLED 0
 
-#define Infinity    9999999.9f
+#define Infinity    9999999
 #define Ninfinity   -Infinity
 
 #define UPPERBOUND 1
@@ -26,12 +25,17 @@
 #define ReduceDepth 2
 
 #ifdef BENCHMARK
+    #include <cmath>
     int NODES_SEARCHED = 0;
 #endif
 
 void Timer(int Milliseconds, std::atomic<bool>& CanSearch) {
     std::this_thread::sleep_for(std::chrono::milliseconds(Milliseconds));
     CanSearch = false;
+
+    #ifdef LOGGER
+        Log("Timer expired. Search cancelled.");
+    #endif
 }
 
 int CalculateExtension(chess::Board& board, int &Extensions, const chess::Move& move) {
@@ -52,34 +56,38 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
     CanSearch = true;
 
     auto TimerThread = std::thread(Timer, Milliseconds, std::ref(CanSearch));
-
-    chess::Move BestMove = chess::Move::NO_MOVE;
-    float BestEval = Ninfinity;
-    int BestIndex = 0;
+    chess::Move BestMove;
+    int BestEval;
 
     chess::Movelist LegalMoves = OrderMoves(board, BestMove, 0);
 
     for (int PlyRemaining = 1; PlyRemaining < 256; PlyRemaining++) {
-        float eval;
+        BestEval = Ninfinity;
 
         for (const auto &move : LegalMoves) {
             board.makeMove(move);
-            eval = -Search(board, StartingPly, PlyRemaining, Ninfinity, Infinity, 0);
+            int eval = -Search(board, StartingPly, PlyRemaining, Ninfinity, Infinity, 0);
             board.unmakeMove(move);
 
-            if (eval > BestEval && CanSearch) {
+            if (!CanSearch) { break; }
+
+            if (eval > BestEval) {
                 BestEval = eval;
                 BestMove = move;
             }
 
-            if (!CanSearch) { break; }
-
             #ifdef BENCHMARK
-                std::cout << "Searched: " << move << " Depth: " << PlyRemaining << std::endl;
+                std::cout << "Searched: " << move << " Depth: " << PlyRemaining << " Eval: " << eval << std::endl;
             #endif
         }
 
+        #ifdef BENCHMARK
+            std::cout << "Searched Depth: " << PlyRemaining << " BestMove: " << BestMove << " Eval: " << BestEval << std::endl;
+        #endif
+
         if (!CanSearch) { break; }
+
+        LegalMoves = OrderMoves(board, BestMove, 0);
     }
 
     #ifdef BENCHMARK
@@ -98,19 +106,18 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
     return BestMove;
 }
 
-float Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, float alpha, float beta, int Extensions) {
+int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, int beta, int Extensions) {
     #ifdef BENCHMARK
         NODES_SEARCHED++;
     #endif
 
     if (!CanSearch) { return SEARCH_CANCELLED; }
-    if (board.isRepetition(1)) { return 0.0f; }
-
+    if (board.isRepetition(1)) {return SEARCH_CANCELLED; }
+    
     chess::Move BestMove = chess::Move::NO_MOVE;
     uint64_t key = board.zobrist();
     TTEntry ttEntry;
     int ttype = UPPERBOUND;
-    bool PVNode = beta - alpha > 1.0f;
 
     if (retrieveTTEntry(key, ttEntry, PlyRemaining)) {
         if (ttEntry.nodeType == UPPERBOUND && ttEntry.value <= alpha)     { return ttEntry.value; }
@@ -134,12 +141,11 @@ float Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, float alpha
         board.makeMove(move);
 
         int Extension = CalculateExtension(board, Extensions, move);
-
-        float eval = 0.0f;
+        int eval = 0;
         bool needsFullSearch = true;
 
         if (i >= 3 && Extension == 0 && PlyRemaining >= 3 && !board.isCapture(move)) {
-            eval = -Search(board, Ply + 1, PlyRemaining - ReduceDepth, -alpha - 1.0f, -alpha, Extensions);
+            eval = -Search(board, Ply + 1, PlyRemaining - ReduceDepth, -alpha - 1, -alpha, Extensions);
             needsFullSearch = eval > alpha;
         }
 
@@ -149,7 +155,7 @@ float Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, float alpha
 
         board.unmakeMove(move);
 
-        if (!CanSearch) { return SEARCH_CANCELLED; }
+        if (!CanSearch) {return SEARCH_CANCELLED; }
 
         if (eval >= beta) {
             storeTTEntry(key, beta, PlyRemaining, LOWERBOUND, move);
@@ -171,7 +177,7 @@ float Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, float alpha
     return alpha;
 }
 
-float Lumina::QSearch(Board& board, float alpha, float beta, int Ply) {
+int Lumina::QSearch(Board& board, int alpha, int beta, int Ply) {
     if (!CanSearch) { return SEARCH_CANCELLED; }
 
     chess::Move BestMove = chess::Move::NO_MOVE;
@@ -180,24 +186,23 @@ float Lumina::QSearch(Board& board, float alpha, float beta, int Ply) {
     int ttype = UPPERBOUND;
 
     if (retrieveTTEntry(key, ttEntry, QSEARCHDEPTH)) {
-        if (ttEntry.nodeType == UPPERBOUND && ttEntry.value <= alpha) { return ttEntry.value; }
-        else if (ttEntry.nodeType == EXACT) { return ttEntry.value; }
+        if      (ttEntry.nodeType == UPPERBOUND && ttEntry.value <= alpha){ return ttEntry.value; }
+        else if (ttEntry.nodeType == EXACT)                               { return ttEntry.value; }
         else if (ttEntry.nodeType == LOWERBOUND && ttEntry.value >= beta) { return ttEntry.value; }
 
         BestMove = ttEntry.bestMove;
     }
 
-    float eval = Evaluation(board, Ply);
+    int eval = Evaluation(board, Ply);
 
     if (eval >= beta) { return beta; }
-
     if (eval > alpha) { alpha = eval; }
 
     chess::Movelist LegalMoves = OrderCaptures(board, BestMove);
 
     for (const auto &move : LegalMoves) {
         board.makeMove(move);
-        float MoveEval = -QSearch(board, -beta, -alpha, Ply + 1);
+        int MoveEval = -QSearch(board, -beta, -alpha, Ply + 1);
         board.unmakeMove(move);
 
         if (!CanSearch) { return SEARCH_CANCELLED; }

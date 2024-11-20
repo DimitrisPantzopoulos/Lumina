@@ -35,54 +35,54 @@ chess::Bitboard SouthFill(chess::Bitboard PawnFile){
     return PawnFile;
 }
 
-#define PAWN_VALUE_MG 286.704f
-#define PAWN_VALUE_EG 319.704f
-#define KNIGHT_VALUE_MG 975.878f
-#define KNIGHT_VALUE_EG 867.878f
-#define BISHOP_VALUE_MG 952.684f
-#define BISHOP_VALUE_EG 981.684f
-#define ROOK_VALUE_MG 1458.65f
-#define ROOK_VALUE_EG 1716.65f
-#define QUEEN_VALUE_MG 3412.55f
-#define QUEEN_VALUE_EG 3151.55f
-#define NOPAWNSHIELD_MG 7.17343f
-#define NOPAWNSHIELD_EG 15.1735f
-#define VQUEENSCOREMG -18.9678f
-#define VQUEENSCOREEG -5.96784f
-#define ISOLATEDPAWN_MG -19.4982f
-#define ISOLATEDPAWN_EG -15.4982f
-#define DOUBLEDPAWN_MG -40.2878f
-#define DOUBLEDPAWN_EG -29.2878f
-#define CENTREPAWN_MG -4.87463f
-#define CENTREPAWN_EG -8.87463f
-#define PHALANXBONUS_MG 2.91307f
-#define PHALANXBONUS_EG 6.91307f
-#define KNIGHTOUTPOST_MG 82.4478f
-#define KNIGHTOUTPOST_EG 71.4478f
-#define KNIGHTMOBILITY_MG 35.3411f
-#define KNIGHTMOBILITY_EG 29.3411f
-#define ROOKOPENFILE_MG 43.072f
-#define ROOKOPENFILE_EG 64.072f
-#define ROOKBACKRANK_MG 77.4299f
-#define ROOKBACKRANK_EG 57.4299f
-#define ROOKMOBILITYMG 16.4595f
-#define ROOKMOBILITYEG 17.4595f
-#define BISHOPOPENFILE_MG 13.6482f
-#define BISHOPOPENFILE_EG 19.6482f
-#define BISHOPFIXEDPAWNS_MG -5.95287f
-#define BISHOPFIXEDPAWNS_EG 5.04713f
-#define BISHOPMOBILITYMG 24.0471f
-#define BISHOPMOBILITYEG 26.0471f
-#define QUEENMOBILITY_MG -10.3852f
-#define QUEENMOBILITY_EG -13.3852f
-#define QUEENMIDDLESQUAREPRESSURE_MG 4.04914f
-#define QUEENMIDDLESQUAREPRESSURE_EG 1.04914f
-#define QUEENDISTANCE_MG -46.5486f
-#define QUEENDISTANCE_EG -41.5486f
-#define BISHOPPAIR_MG 154.475f
-#define BISHOPPAIR_EG 144.475f
+#define PAWN_VALUE_MG 286
+#define PAWN_VALUE_EG 319
+#define KNIGHT_VALUE_MG 975
+#define KNIGHT_VALUE_EG 867
+#define BISHOP_VALUE_MG 952
+#define BISHOP_VALUE_EG 981
+#define ROOK_VALUE_MG 1458
+#define ROOK_VALUE_EG 1716
+#define QUEEN_VALUE_MG 3412
+#define QUEEN_VALUE_EG 3151
+#define NOPAWNSHIELD_MG 7
+#define NOPAWNSHIELD_EG 15
+#define VQUEENSCOREMG -18
+#define VQUEENSCOREEG -5
+#define ISOLATEDPAWN_MG -19
+#define ISOLATEDPAWN_EG -15
+#define DOUBLEDPAWN_MG -40
+#define DOUBLEDPAWN_EG -29
+#define CENTREPAWN_MG -4
+#define CENTREPAWN_EG -8
+#define PHALANXBONUS_MG 2
+#define PHALANXBONUS_EG 6
+#define KNIGHTOUTPOST_MG 82
+#define KNIGHTOUTPOST_EG 71
+#define KNIGHTMOBILITY_MG 35
+#define KNIGHTMOBILITY_EG 29
+#define ROOKOPENFILE_MG 43
+#define ROOKOPENFILE_EG 64
+#define ROOKBACKRANK_MG 77
+#define ROOKBACKRANK_EG 57
+#define ROOKMOBILITYMG 16
+#define ROOKMOBILITYEG 17
+#define BISHOPOPENFILE_MG 13
+#define BISHOPOPENFILE_EG 19
+#define BISHOPFIXEDPAWNS_MG -5
+#define BISHOPFIXEDPAWNS_EG 5
+#define BISHOPMOBILITYMG 24
+#define BISHOPMOBILITYEG 26
+#define QUEENMOBILITY_MG -10
+#define QUEENMOBILITY_EG -13
+#define QUEENMIDDLESQUAREPRESSURE_MG 4
+#define QUEENMIDDLESQUAREPRESSURE_EG 1
+#define QUEENDISTANCE_MG -46
+#define QUEENDISTANCE_EG -41
+#define BISHOPPAIR_MG 154.
+#define BISHOPPAIR_EG 144
 
-float PiecesValueEval(const chess::PieceType& PieceType, float weight) {
+int PiecesValueEval(const chess::PieceType& PieceType, float weight) {
     if (PieceType == chess::PieceType::PAWN)          {return TaperedEvaluation(weight, PAWN_VALUE_MG, PAWN_VALUE_EG);} 
     else if (PieceType == chess::PieceType::KNIGHT)   {return TaperedEvaluation(weight, KNIGHT_VALUE_MG, KNIGHT_VALUE_EG);}
     else if (PieceType == chess::PieceType::BISHOP)   {return TaperedEvaluation(weight, BISHOP_VALUE_MG, BISHOP_VALUE_EG);} 
@@ -92,7 +92,7 @@ float PiecesValueEval(const chess::PieceType& PieceType, float weight) {
     return 0.0f;
 }
 
-float SafetyScore(const chess::Square &KSq, const chess::Bitboard& occ ,const chess::Bitboard &FriendPawns, float weight, bool isWhite) {
+int SafetyScore(const chess::Square &KSq, const chess::Bitboard& occ ,const chess::Bitboard &FriendPawns, float weight, bool isWhite) {
     int file = KSq.file();
     int rank = KSq.rank();
 
@@ -125,7 +125,7 @@ float SafetyScore(const chess::Square &KSq, const chess::Bitboard& occ ,const ch
     return SafetyScore;
 }
 
-float EvaluatePawn(const chess::Square &sq, const chess::Bitboard &EnemyPawns, const chess::Bitboard &FriendPawns, float weight, bool isWhite) {
+int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &EnemyPawns, const chess::Bitboard &FriendPawns, float weight, bool isWhite) {
     constexpr static std::array<int, 7> PawnBonuses = {0, 94, 202, 128, 60, 2, 8};
     constexpr static std::array<int, 7> PawnBonusesEG = {0, 85, 187, 111, 54, -1, 7};
     static const uint64_t Msquares = 0x1818000000;
@@ -195,7 +195,7 @@ float EvaluatePawn(const chess::Square &sq, const chess::Bitboard &EnemyPawns, c
     return Score;
 }
 
-float EvaluateKnight(const chess::Square &sq, const chess::Bitboard& EnemyPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& SCBEP, float weight, bool isWhite){
+int EvaluateKnight(const chess::Square &sq, const chess::Bitboard& EnemyPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& SCBEP, float weight, bool isWhite){
     //We want Knights to be on outposts in the middle so they can control as many squares as possible
     //and basically harrass the other side
     int file = sq.file();
@@ -222,7 +222,7 @@ float EvaluateKnight(const chess::Square &sq, const chess::Bitboard& EnemyPawns,
     //Apply the forward mask to get the relevant bits in front and behind the knight which creates like an X Shape
     uint64_t KnightBits = KForward & CombinedMask;
 
-    float Score = 0.0f;
+    int Score = 0;
 
     // See if a knight is on a outpost
     if (((KnightBits & EnemyPawns.getBits()) == 0) && ((KBackward & FriendPawns.getBits()) != 0)) {
@@ -237,8 +237,8 @@ float EvaluateKnight(const chess::Square &sq, const chess::Bitboard& EnemyPawns,
     return Score;
 }
 
-float EvaluateRooks(const chess::Square &sq, const chess::Bitboard& EnemyPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& occ, float weight, bool isWhite){
-    float Score = 0.0f;
+int EvaluateRooks(const chess::Square &sq, const chess::Bitboard& EnemyPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& occ, float weight, bool isWhite){
+    int Score = 0;
 
     //Get the file the rook is on and make it into a bitboard
     int file = sq.file();
@@ -263,7 +263,7 @@ float EvaluateRooks(const chess::Square &sq, const chess::Bitboard& EnemyPawns, 
     return Score;
 }
 
-float EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const chess::Bitboard& EnemyPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& EnemyPawnsSq, float weight, bool isWhite){
+int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const chess::Bitboard& EnemyPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& EnemyPawnsSq, float weight, bool isWhite){
     static const chess::Bitboard LIGHT_SQUARES= chess::Bitboard(0x55AA55AA55AA55AAULL);
     static const chess::Bitboard DARK_SQUARES = chess::Bitboard(0xAA55AA55AA55AA55ULL);
 
@@ -284,7 +284,7 @@ float EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const c
     }
 
     // Combine Backwards and BishopBitboard to have only the forwards moves
-    float Score = 0.0f;
+    int Score = 0;
 
     // Check if bishop controls a open diagonal
     // The reason for < 2 is because the bishop can only control max 2 open diagonals if i didnt do this
@@ -333,10 +333,10 @@ float EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const c
     return Score;
 }
 
-float EvaluateQueen(const chess::Board& board, const chess::Bitboard& EnemyPawns, const chess::Bitboard occ, const chess::Square &sq, const chess::Color EnemyColor, float weight){
+int EvaluateQueen(const chess::Board& board, const chess::Bitboard& EnemyPawns, const chess::Bitboard occ, const chess::Square &sq, const chess::Color EnemyColor, float weight){
     static const chess::Bitboard Msquares = chess::Bitboard(0x1818000000ULL);
 
-    float Score = 0.0f;
+    int Score = 0;
 
     // Count mobility
     chess::Bitboard QueenMobility = chess::attacks::queen(sq, occ);

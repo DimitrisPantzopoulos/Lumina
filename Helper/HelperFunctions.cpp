@@ -40,8 +40,8 @@ int PiecesValue(const chess::PieceType& PieceType){
     return 0;
 }
 
-float TaperedEvaluation(float& weight, float WeightMG, float WeightEG){
-    return weight * WeightMG + (1 - weight) * WeightEG;
+int TaperedEvaluation(float& weight, float WeightMG, float WeightEG){
+    return static_cast<int>(weight * WeightMG + (1 - weight) * WeightEG);
 }
 
 
