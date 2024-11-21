@@ -1,39 +1,10 @@
 #include "..\ChessLib\chess-library-master\include\chess.hpp"
 #include "..\Helper\HelperFunctions.h"
-
 #include "EvalHelp.h"
 
 #include <iostream>
 #include <cmath>
 #include <map>
-
-chess::Bitboard GetPawnControlledSquares(const chess::Bitboard pawns,const chess::Color color){
-    std::vector<uint8_t> PawnIndexes = GetIndexesFromBitBoard(pawns);
-
-    chess::Bitboard PawnAttackBitboard = chess::Bitboard(0ULL);
-
-    for(const auto &index : PawnIndexes){
-        PawnAttackBitboard |= chess::attacks::pawn(color, index);
-    }
-
-    return PawnAttackBitboard;
-}
-
-chess::Bitboard NorthFill(chess::Bitboard PawnFile){
-    PawnFile |= (PawnFile << 8);
-    PawnFile |= (PawnFile << 16);
-    PawnFile |= (PawnFile << 32);
-
-    return PawnFile;
-}
-
-chess::Bitboard SouthFill(chess::Bitboard PawnFile){
-    PawnFile |= (PawnFile >> 8);
-    PawnFile |= (PawnFile >> 16);
-    PawnFile |= (PawnFile >> 32);
-
-    return PawnFile;
-}
 
 #define PAWN_VALUE_MG 286
 #define PAWN_VALUE_EG 319
@@ -79,11 +50,11 @@ chess::Bitboard SouthFill(chess::Bitboard PawnFile){
 #define QUEENMIDDLESQUAREPRESSURE_EG 1
 #define QUEENDISTANCE_MG -46
 #define QUEENDISTANCE_EG -41
-#define BISHOPPAIR_MG 154.
+#define BISHOPPAIR_MG 154
 #define BISHOPPAIR_EG 144
 
 int PiecesValueEval(const chess::PieceType& PieceType, float weight) {
-    if (PieceType == chess::PieceType::PAWN)          {return TaperedEvaluation(weight, PAWN_VALUE_MG, PAWN_VALUE_EG);} 
+    if      (PieceType == chess::PieceType::PAWN)     {return TaperedEvaluation(weight, PAWN_VALUE_MG, PAWN_VALUE_EG);} 
     else if (PieceType == chess::PieceType::KNIGHT)   {return TaperedEvaluation(weight, KNIGHT_VALUE_MG, KNIGHT_VALUE_EG);}
     else if (PieceType == chess::PieceType::BISHOP)   {return TaperedEvaluation(weight, BISHOP_VALUE_MG, BISHOP_VALUE_EG);} 
     else if (PieceType == chess::PieceType::ROOK)     {return TaperedEvaluation(weight, ROOK_VALUE_MG, ROOK_VALUE_EG);}
@@ -126,8 +97,9 @@ int SafetyScore(const chess::Square &KSq, const chess::Bitboard& occ ,const ches
 }
 
 int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &EnemyPawns, const chess::Bitboard &FriendPawns, float weight, bool isWhite) {
-    constexpr static std::array<int, 7> PawnBonuses = {0, 94, 202, 128, 60, 2, 8};
+    constexpr static std::array<int, 7> PawnBonuses =   {0, 94, 202, 128, 60, 2, 8};
     constexpr static std::array<int, 7> PawnBonusesEG = {0, 85, 187, 111, 54, -1, 7};
+
     static const uint64_t Msquares = 0x1818000000;
 
     float Score = 0.0f;
@@ -325,7 +297,7 @@ int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const che
         }
     }
 
-    // Fixed Pawns are harder to get rid of so we should make them twice as bad
+    // Fixed Pawns are harder to get rid of
     Score += NoOfFixedPawns * TaperedEvaluation(weight, BISHOPFIXEDPAWNS_MG, BISHOPFIXEDPAWNS_EG);
 
     Score += (BishopBitBoard & ~EnemyPawnsSq).count() * TaperedEvaluation(weight, BISHOPMOBILITYMG, BISHOPMOBILITYEG);
@@ -333,7 +305,7 @@ int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const che
     return Score;
 }
 
-int EvaluateQueen(const chess::Board& board, const chess::Bitboard& EnemyPawns, const chess::Bitboard occ, const chess::Square &sq, const chess::Color EnemyColor, float weight){
+int EvaluateQueen(const chess::Square &sq, const chess::Board& board, const chess::Bitboard& EnemyPawns, const chess::Bitboard occ, const chess::Color EnemyColor, float weight){
     static const chess::Bitboard Msquares = chess::Bitboard(0x1818000000ULL);
 
     int Score = 0;

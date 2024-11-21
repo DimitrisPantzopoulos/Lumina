@@ -44,4 +44,30 @@ int TaperedEvaluation(float& weight, float WeightMG, float WeightEG){
     return static_cast<int>(weight * WeightMG + (1 - weight) * WeightEG);
 }
 
+chess::Bitboard GetPawnControlledSquares(const chess::Bitboard pawns,const chess::Color color){
+    std::vector<uint8_t> PawnIndexes = GetIndexesFromBitBoard(pawns);
 
+    chess::Bitboard PawnAttackBitboard = chess::Bitboard(0ULL);
+
+    for(const auto &index : PawnIndexes){
+        PawnAttackBitboard |= chess::attacks::pawn(color, index);
+    }
+
+    return PawnAttackBitboard;
+}
+
+chess::Bitboard NorthFill(chess::Bitboard PawnFile){
+    PawnFile |= (PawnFile << 8);
+    PawnFile |= (PawnFile << 16);
+    PawnFile |= (PawnFile << 32);
+
+    return PawnFile;
+}
+
+chess::Bitboard SouthFill(chess::Bitboard PawnFile){
+    PawnFile |= (PawnFile >> 8);
+    PawnFile |= (PawnFile >> 16);
+    PawnFile |= (PawnFile >> 32);
+
+    return PawnFile;
+}

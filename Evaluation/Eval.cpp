@@ -15,7 +15,7 @@ int Evaluation(const chess::Board& board, int Ply){
     chess::GameResult State = board.isGameOver().second;
 
     if(State != chess::GameResult::NONE){
-        if(State == chess::GameResult::WIN)      {return (ImmediateMateScore - Ply);}
+        if(State == chess::GameResult::WIN)      {return  (ImmediateMateScore - Ply);}
         else if(State == chess::GameResult::LOSE){return -(ImmediateMateScore - Ply);}
         else if(State == chess::GameResult::DRAW){return 0;}
     }
@@ -62,11 +62,9 @@ int Evaluation(const chess::Board& board, int Ply){
         chess::Square Sq = chess::Square(index);
 
         chess::Piece Board_at = board.at(Sq); 
-
-        bool Color = (Board_at.color() == chess::Color::WHITE);
-
         chess::PieceType PieceType = Board_at.type();
-
+        bool Color = (Board_at.color() == chess::Color::WHITE);
+        
         if(Color){
             WhiteScore += PiecesValueEval(PieceType, BEndgameWeight) + PST(Board_at, index, BEndgameWeight);
 
@@ -80,7 +78,7 @@ int Evaluation(const chess::Board& board, int Ply){
                 WhiteScore += EvaluateBishop(Sq, CombinedBitboard, BPawns, WPawns, BPawnsSq, BEndgameWeight, true);
                 WhiteBishops++;
             }else if(PieceType == chess::PieceType::QUEEN){
-                WhiteScore += EvaluateQueen(board, BPawns, CombinedBitboard, Sq, chess::Color::BLACK, BEndgameWeight);
+                WhiteScore += EvaluateQueen(Sq, board, BPawns, CombinedBitboard, chess::Color::BLACK, BEndgameWeight);
             }
 
         }else{
@@ -96,7 +94,7 @@ int Evaluation(const chess::Board& board, int Ply){
                 BlackScore += EvaluateBishop(Sq, CombinedBitboard, WPawns, BPawns, WPawnsSq, WEndgameWeight, false);
                 BlackBishops++;
             }else if(PieceType == chess::PieceType::QUEEN){
-                BlackScore += EvaluateQueen(board, WPawns, CombinedBitboard, Sq, chess::Color::WHITE, WEndgameWeight);
+                BlackScore += EvaluateQueen(Sq, board, WPawns, CombinedBitboard, chess::Color::WHITE, WEndgameWeight);
             }
         }
     }

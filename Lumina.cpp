@@ -12,7 +12,7 @@
 
 #define SEARCH_CANCELLED 0
 
-#define Infinity    9999999
+#define Infinity     9999999
 #define Ninfinity   -Infinity
 
 #define UPPERBOUND 1
@@ -20,9 +20,8 @@
 #define LOWERBOUND 3
 
 #define QSEARCHDEPTH 0
-
-#define StartingPly 0
-#define ReduceDepth 2
+#define StartingPly  0
+#define ReduceDepth  2
 
 #ifdef BENCHMARK
     #include <cmath>
@@ -32,10 +31,6 @@
 void Timer(int Milliseconds, std::atomic<bool>& CanSearch) {
     std::this_thread::sleep_for(std::chrono::milliseconds(Milliseconds));
     CanSearch = false;
-
-    #ifdef LOGGER
-        Log("Timer expired. Search cancelled.");
-    #endif
 }
 
 int CalculateExtension(chess::Board& board, int &Extensions, const chess::Move& move) {
@@ -61,7 +56,7 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
 
     chess::Movelist LegalMoves = OrderMoves(board, BestMove, 0);
 
-    for (int PlyRemaining = 1; PlyRemaining < 256; PlyRemaining++) {
+    for (int PlyRemaining=1; PlyRemaining < 256; PlyRemaining++) {
         BestEval = Ninfinity;
 
         for (const auto &move : LegalMoves) {
@@ -111,16 +106,15 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
         NODES_SEARCHED++;
     #endif
 
-    if (!CanSearch) { return SEARCH_CANCELLED; }
-    if (board.isRepetition(1)) {return SEARCH_CANCELLED; }
+    if (!CanSearch || board.isRepetition(1)) { return SEARCH_CANCELLED; }
     
     chess::Move BestMove = chess::Move::NO_MOVE;
     uint64_t key = board.zobrist();
     TTEntry ttEntry;
     int ttype = UPPERBOUND;
 
-    if (retrieveTTEntry(key, ttEntry, PlyRemaining)) {
-        if (ttEntry.nodeType == UPPERBOUND && ttEntry.value <= alpha)     { return ttEntry.value; }
+    if (TT.retrieveTTEntry(key, ttEntry, PlyRemaining)) {
+        if      (ttEntry.nodeType == UPPERBOUND && ttEntry.value <= alpha){ return ttEntry.value; }
         else if (ttEntry.nodeType == EXACT)                               { return ttEntry.value; }
         else if (ttEntry.nodeType == LOWERBOUND && ttEntry.value >= beta) { return ttEntry.value; }
 
@@ -135,30 +129,30 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
 
     chess::Movelist LegalMoves = OrderMoves(board, BestMove, Ply);
 
-    for (int i = 0; i < LegalMoves.size(); i++) {
+    for (int i=0; i<LegalMoves.size(); i++) {
         chess::Move move = LegalMoves[i];
 
         board.makeMove(move);
 
         int Extension = CalculateExtension(board, Extensions, move);
-        int eval = 0;
         bool needsFullSearch = true;
+        int eval = 0;
 
         if (i >= 3 && Extension == 0 && PlyRemaining >= 3 && !board.isCapture(move)) {
-            eval = -Search(board, Ply + 1, PlyRemaining - ReduceDepth, -alpha - 1, -alpha, Extensions);
+            eval = -Search(board, Ply+1, PlyRemaining - ReduceDepth, -alpha-1, -alpha, Extensions);
             needsFullSearch = eval > alpha;
         }
 
         if (needsFullSearch) {
-            eval = -Search(board, Ply + 1, PlyRemaining - 1 + Extension, -beta, -alpha, Extensions + Extension);
+            eval = -Search(board, Ply+1, PlyRemaining-1 + Extension, -beta, -alpha, Extensions + Extension);
         }
 
         board.unmakeMove(move);
 
-        if (!CanSearch) {return SEARCH_CANCELLED; }
+        if (!CanSearch) { return SEARCH_CANCELLED; }
 
         if (eval >= beta) {
-            storeTTEntry(key, beta, PlyRemaining, LOWERBOUND, move);
+            TT.storeTTEntry(key, beta, PlyRemaining, LOWERBOUND, move);
 
             if (!board.isCapture(move) && !(move.typeOf() == chess::Move::PROMOTION)) { KillerMoveTable.addKillerMoves(move, eval, Ply); }
 
@@ -166,14 +160,13 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
         }
 
         if (eval > alpha) {
-            alpha = eval;
+            alpha    = eval;
             BestMove = move;
-            ttype = EXACT;
+            ttype    = EXACT;
         }
     }
 
-    storeTTEntry(key, alpha, PlyRemaining, ttype, BestMove);
-
+    TT.storeTTEntry(key, alpha, PlyRemaining, ttype, BestMove);
     return alpha;
 }
 
@@ -182,10 +175,10 @@ int Lumina::QSearch(Board& board, int alpha, int beta, int Ply) {
 
     chess::Move BestMove = chess::Move::NO_MOVE;
     uint64_t key = board.zobrist();
-    TTEntry ttEntry;
     int ttype = UPPERBOUND;
+    TTEntry ttEntry;
 
-    if (retrieveTTEntry(key, ttEntry, QSEARCHDEPTH)) {
+    if (TT.retrieveTTEntry(key, ttEntry, QSEARCHDEPTH)) {
         if      (ttEntry.nodeType == UPPERBOUND && ttEntry.value <= alpha){ return ttEntry.value; }
         else if (ttEntry.nodeType == EXACT)                               { return ttEntry.value; }
         else if (ttEntry.nodeType == LOWERBOUND && ttEntry.value >= beta) { return ttEntry.value; }
@@ -196,7 +189,7 @@ int Lumina::QSearch(Board& board, int alpha, int beta, int Ply) {
     int eval = Evaluation(board, Ply);
 
     if (eval >= beta) { return beta; }
-    if (eval > alpha) { alpha = eval; }
+    if (eval > alpha) { alpha = eval;}
 
     chess::Movelist LegalMoves = OrderCaptures(board, BestMove);
 
@@ -208,7 +201,7 @@ int Lumina::QSearch(Board& board, int alpha, int beta, int Ply) {
         if (!CanSearch) { return SEARCH_CANCELLED; }
 
         if (MoveEval >= beta) {
-            storeTTEntry(key, beta, QSEARCHDEPTH, LOWERBOUND, move);
+            TT.storeTTEntry(key, beta, QSEARCHDEPTH, LOWERBOUND, move);
             return beta;
         }
 
@@ -219,6 +212,6 @@ int Lumina::QSearch(Board& board, int alpha, int beta, int Ply) {
         }
     }
 
-    storeTTEntry(key, alpha, QSEARCHDEPTH, ttype, BestMove);
+    TT.storeTTEntry(key, alpha, QSEARCHDEPTH, ttype, BestMove);
     return alpha;
 }
