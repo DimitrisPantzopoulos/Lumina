@@ -116,21 +116,7 @@ void HandleUCINewGame(string command, vector<string>& sequence, bool& opening){
     opening = false;
 }
 
-void RunBench(){
-    bot.BENCH = true;
-
-    // 1 second to search so we get the nodes per second
-    int TimeToSearch = 1000;
-
-    // Search for one second
-    Move bestMove = bot.Think(board, TimeToSearch);
-
-    //Report NPS
-    cout << bot.NODES_SEARCHED << " nodes " << bot.NODES_SEARCHED << " nps";
-}
-
-// Function to handle UCI commands and game loop
-void uci_loop() {
+void UCI() {
     bool opening = false;
     vector<string> sequence;
 
@@ -173,14 +159,8 @@ void uci_loop() {
     }
 }
 
-int main(int argc, char* argv[]) {
-    if (argc > 1 && std::string(argv[1]) == "bench") {
-        // Run the benchmark and print node count and NPS
-        RunBench();
-    }else{
-        //LoadOpeningBook(book, "Book/Book.txt");
-        uci_loop();
-    }
+int main() {
+    UCI();
 
     return 0;
 }

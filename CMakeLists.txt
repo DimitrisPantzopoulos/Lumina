@@ -11,10 +11,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Option for specifying executable name
 set(EXE_NAME "LuminaV6" CACHE STRING "Name of the engine executable")
 
-# Option for specifying the compiler (e.g., g++)
 set(CMAKE_CXX_COMPILER "g++" CACHE STRING "C++ compiler")
 
-# Add the EXE variable so OpenBench can control it
 set(EXE_NAME ${EXE_NAME} CACHE STRING "Output binary name")
 
 # Specify source files
@@ -33,6 +31,8 @@ set(SOURCES
 
 # Define the executable using the EXE_NAME variable
 add_executable(${EXE_NAME} ${SOURCES})
+
+target_include_directories(LuminaV6 PRIVATE "ChessLib/include")
 
 # Ensure the executable is named correctly for OpenBench
 set_target_properties(${EXE_NAME} PROPERTIES OUTPUT_NAME ${EXE_NAME})

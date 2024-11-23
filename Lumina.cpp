@@ -25,7 +25,8 @@
 
 #ifdef LDEBUG
     #include <cmath>
-    int DEBUG_NODES_SEARCHED = 0;
+    int DEBUG_SEARCH_NODES  = 0;
+    int DEBUG_QSEARCH_NODES = 0;
 #endif
 
 void Timer(int Milliseconds, std::atomic<bool>& CanSearch) {
@@ -80,7 +81,7 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
         }
 
         if (BestEval != Ninfinity) {
-            LastValidEval = BestEval; // Update LastValidEval if this depth was completed.
+            LastValidEval = BestEval;
         }
 
         #ifdef LDEBUG
@@ -94,9 +95,11 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
         LegalMoves = OrderMoves(board, BestMove, 0);
     }
 
-    #ifdef DEBUG
+    #ifdef LDEBUG
         std::cout << std::endl;
-        std::cout << "Searched: " << (std::round(NODES_SEARCHED / 1000)) << "K Nodes/s " << std::endl;
+        std::cout << "Searched SEARCH  NODES: " << (std::round(DEBUG_SEARCH_NODES  / 1000)) << "K Nodes/s " << std::endl;
+        std::cout << "Searched QSEARCH NODES: " << (std::round(DEBUG_QSEARCH_NODES / 1000)) << "K Nodes/s " << std::endl;
+        std::cout << "Searched Total   NODES: " << (std::round(DEBUG_SEARCH_NODES  / 1000) + std::round(DEBUG_QSEARCH_NODES / 1000)) << "K Nodes/s " << std::endl;
         std::cout << std::endl;
     #endif
 
@@ -105,7 +108,7 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
     }
 
     if (BestEval == Ninfinity) {
-        BestEval = LastValidEval; // Fallback to the last valid evaluation.
+        BestEval = LastValidEval;
     }
 
     std::cout << "info score cp " << BestEval << std::endl;
@@ -116,10 +119,8 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
 
 int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, int beta, int Extensions) {
     #ifdef LDEBUG
-        DEBUG_NODES_SEARCHED++;
+        DEBUG_SEARCH_NODES++;
     #endif
-
-    if(BENCH){NODES_SEARCHED++;}
 
     if (!CanSearch || board.isRepetition(1)) { return SEARCH_CANCELLED; }
     
@@ -187,10 +188,8 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
 
 int Lumina::QSearch(chess::Board& board, int alpha, int beta, int Ply) {
     #ifdef LDEBUG
-        DEBUG_NODES_SEARCHED++;
+        DEBUG_QSEARCH_NODES++;
     #endif
-
-    if(BENCH){NODES_SEARCHED++;}
 
     if (!CanSearch) { return SEARCH_CANCELLED; }
 
