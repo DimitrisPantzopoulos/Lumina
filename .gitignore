@@ -1,4 +1,3 @@
-CMakesList.txt
 /Chesslib
 book.txt
 book.epd
@@ -9,3 +8,4 @@ Helper/main.py
 Helper/SEEEXPERIMENTAL.txt
 Evaluation/EvaluationFeatures.txt
 openings.epd
+/build

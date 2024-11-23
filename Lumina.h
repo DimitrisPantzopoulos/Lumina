@@ -10,7 +10,6 @@
 #include <thread>
 #include <string>
 #include <vector>
-#include <cstdlib>
 
 using namespace chess;
 using namespace std;
@@ -23,6 +22,9 @@ class Lumina {
         TT TT;
         
     public:
+        bool BENCH = false;
+        int NODES_SEARCHED  = 0;
+
         Movelist OrderMoves   (chess::Board& board, chess::Move& HashMove, const int Ply);
         Movelist OrderCaptures(Board& board, Move& HashMove);
 

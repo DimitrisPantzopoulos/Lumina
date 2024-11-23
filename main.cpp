@@ -11,7 +11,7 @@ using namespace std;
 
 Lumina bot;
 Trie book;
-chess::Board board;
+Board board;
 string FEN = board.getFen();
 
 void FindBestMove(vector<string>& sequence, int Milliseconds) {
@@ -23,7 +23,8 @@ void FindBestMove(vector<string>& sequence, int Milliseconds) {
 void HandleUCIStart(){
     cout << "id name Lumina" << endl;
     cout << "id author Lumina" << endl;
-    cout << "option name Threads type spin default 1 min 1 max 1" << endl;
+    cout << "option name Threads type spin default 2 min 2 max 2" << endl;
+    cout << "option name Hash type spin default 64 min 64 max 64" << endl;
     cout << "uciok" << endl;
 }
 
@@ -60,7 +61,7 @@ void HandleUCIGo(string command, vector<string>& sequence, bool& opening){
     //The commented code is an attempt to dynamically find how long we should search based on how much time is left, I've left it out because i think to improve the
     //search function it would be better to have this variable be the same for testing purposes. Also this has a wierd bug which causes the program to disconnect from 
     //fastchess my guess is because its trying to search for a few milliseconds it cant do it fast enough so it just returns a null move or smth.
-    int TimeToSearch = 100; //(board.sideToMove() == Color::WHITE ? std::stoi(TimeControl[2]) : std::stoi(TimeControl[4])) / (AvgMovesaGame - sequence.size() + 1);   
+    int TimeToSearch = 1000; //(board.sideToMove() == Color::WHITE ? std::stoi(TimeControl[2]) : std::stoi(TimeControl[4])) / (AvgMovesaGame - sequence.size() + 1);   
 
     if (!opening) {
         FindBestMove(sequence, TimeToSearch);
@@ -115,6 +116,19 @@ void HandleUCINewGame(string command, vector<string>& sequence, bool& opening){
     opening = false;
 }
 
+void RunBench(){
+    bot.BENCH = true;
+
+    // 1 second to search so we get the nodes per second
+    int TimeToSearch = 1000;
+
+    // Search for one second
+    Move bestMove = bot.Think(board, TimeToSearch);
+
+    //Report NPS
+    cout << bot.NODES_SEARCHED << " nodes " << bot.NODES_SEARCHED << " nps";
+}
+
 // Function to handle UCI commands and game loop
 void uci_loop() {
     bool opening = false;
@@ -159,9 +173,14 @@ void uci_loop() {
     }
 }
 
-int main() {
-    //LoadOpeningBook(book, "Book/Book.txt");
-    uci_loop();
+int main(int argc, char* argv[]) {
+    if (argc > 1 && std::string(argv[1]) == "bench") {
+        // Run the benchmark and print node count and NPS
+        RunBench();
+    }else{
+        //LoadOpeningBook(book, "Book/Book.txt");
+        uci_loop();
+    }
 
     return 0;
 }

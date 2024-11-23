@@ -4,6 +4,7 @@
 #include "..\ChessLib\chess-library-master\include\chess.hpp"
 #include "../Lumina.h"
 
+#include <cstdlib>
 #include <vector>
 #include <ctime> 
 
@@ -19,14 +20,14 @@ struct TTEntry {
     int nodeType;                // Type of node (UPPERBOUND, EXACT, LOWERBOUND) (1, 2, 3) respectively
     chess::Move bestMove;        // Best move found from this position
 
-    TTEntry() : value(0.0f), depth(0), nodeType(1), bestMove(chess::Move::NO_MOVE) {}  // Default constructor
+    TTEntry() : value(0), depth(0), nodeType(1), bestMove(chess::Move::NO_MOVE) {}  // Default constructor
 
     TTEntry(int v, int d, int nt, chess::Move bm) : value(v), depth(d), nodeType(nt), bestMove(bm) {} // Constructor with values
 };
 
 struct TT{
     TT(){
-        std::srand(static_cast<unsigned int>(std::time(nullptr)));
+        std::srand(457345);
     }
     
     unordered_map<uint64_t, TTEntry> TTable;

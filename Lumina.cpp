@@ -23,9 +23,9 @@
 #define StartingPly  0
 #define ReduceDepth  2
 
-#ifdef BENCHMARK
+#ifdef LDEBUG
     #include <cmath>
-    int NODES_SEARCHED = 0;
+    int DEBUG_NODES_SEARCHED = 0;
 #endif
 
 void Timer(int Milliseconds, std::atomic<bool>& CanSearch) {
@@ -53,7 +53,7 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
     auto TimerThread = std::thread(Timer, Milliseconds, std::ref(CanSearch));
     chess::Move BestMove;
     int BestEval = Ninfinity;
-    int LastValidEval = 0; // Initialize to a neutral or reasonable default score.
+    int LastValidEval = 0;
 
     chess::Movelist LegalMoves = OrderMoves(board, BestMove, 0);
 
@@ -74,7 +74,7 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
                 BestMove = move;
             }
 
-            #ifdef BENCHMARK
+            #ifdef LDEBUG
                 std::cout << "Searched: " << move << " Depth: " << PlyRemaining << " Eval: " << eval << std::endl;
             #endif
         }
@@ -83,7 +83,7 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
             LastValidEval = BestEval; // Update LastValidEval if this depth was completed.
         }
 
-        #ifdef BENCHMARK
+        #ifdef LDEBUG
             std::cout << "Searched Depth: " << PlyRemaining << " BestMove: " << BestMove << " Eval: " << BestEval << std::endl;
         #endif
 
@@ -94,7 +94,7 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
         LegalMoves = OrderMoves(board, BestMove, 0);
     }
 
-    #ifdef BENCHMARK
+    #ifdef DEBUG
         std::cout << std::endl;
         std::cout << "Searched: " << (std::round(NODES_SEARCHED / 1000)) << "K Nodes/s " << std::endl;
         std::cout << std::endl;
@@ -115,9 +115,11 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
 }
 
 int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, int beta, int Extensions) {
-    #ifdef BENCHMARK
-        NODES_SEARCHED++;
+    #ifdef LDEBUG
+        DEBUG_NODES_SEARCHED++;
     #endif
+
+    if(BENCH){NODES_SEARCHED++;}
 
     if (!CanSearch || board.isRepetition(1)) { return SEARCH_CANCELLED; }
     
@@ -183,7 +185,13 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
     return alpha;
 }
 
-int Lumina::QSearch(Board& board, int alpha, int beta, int Ply) {
+int Lumina::QSearch(chess::Board& board, int alpha, int beta, int Ply) {
+    #ifdef LDEBUG
+        DEBUG_NODES_SEARCHED++;
+    #endif
+
+    if(BENCH){NODES_SEARCHED++;}
+
     if (!CanSearch) { return SEARCH_CANCELLED; }
 
     chess::Move BestMove = chess::Move::NO_MOVE;

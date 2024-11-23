@@ -2,26 +2,19 @@
 #include "HelperFunctions.h"
 #include <vector>
 
-uint8_t GetLsbPosition(uint64_t& bitboard) {
-    return __builtin_ctzll(bitboard);
+chess::Bitboard PopLsb(chess::Bitboard& bitboard) {
+    uint64_t bb = bitboard.getBits();
+    bb &= bb - 1;
+    return chess::Bitboard(bb);
 }
 
-void PopLsb(uint64_t& bitboard) {
-    bitboard &= bitboard - 1;
-}
-
-std::vector<uint8_t> GetIndexesFromBitBoard(const chess::Bitboard& Bitboard){
-    uint64_t BB = Bitboard.getBits();
+std::vector<uint8_t> GetIndexesFromBitBoard(chess::Bitboard& Bitboard){
     std::vector<uint8_t> Indexes;
 
     for(int i=0;i<64;i++){
-        if(BB == 0){
-            break;
-        }
-
-        Indexes.push_back(GetLsbPosition(BB));
-
-        PopLsb(BB);
+        if(Bitboard == 0){break;}
+        Indexes.push_back(Bitboard.lsb());
+        Bitboard = PopLsb(Bitboard);
     }
 
     return Indexes;
@@ -40,11 +33,11 @@ int PiecesValue(const chess::PieceType& PieceType){
     return 0;
 }
 
-int TaperedEvaluation(float& weight, float WeightMG, float WeightEG){
+int TaperedEvaluation(float& weight, int WeightMG, int WeightEG){
     return static_cast<int>(weight * WeightMG + (1 - weight) * WeightEG);
 }
 
-chess::Bitboard GetPawnControlledSquares(const chess::Bitboard pawns,const chess::Color color){
+chess::Bitboard GetPawnControlledSquares(chess::Bitboard pawns,const chess::Color color){
     std::vector<uint8_t> PawnIndexes = GetIndexesFromBitBoard(pawns);
 
     chess::Bitboard PawnAttackBitboard = chess::Bitboard(0ULL);

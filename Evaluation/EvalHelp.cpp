@@ -58,7 +58,7 @@ int PiecesValueEval(const chess::PieceType& PieceType, float weight) {
     else if (PieceType == chess::PieceType::ROOK)     {return TaperedEvaluation(weight, ROOK_VALUE_MG, ROOK_VALUE_EG);}
     else if (PieceType == chess::PieceType::QUEEN)    {return TaperedEvaluation(weight, QUEEN_VALUE_MG, QUEEN_VALUE_EG);}
 
-    return 0.0f;
+    return 0;
 }
 
 int SafetyScore(const chess::Square &KSq, const chess::Bitboard& occ ,const chess::Bitboard &FriendPawns, float weight, bool isWhite) {
@@ -83,7 +83,7 @@ int SafetyScore(const chess::Square &KSq, const chess::Bitboard& occ ,const ches
     // Combine the masks
     uint64_t combinedMask = (fileMask | leftFileMask | rightFileMask) & KForward;
 
-    float SafetyScore = 0.0f;
+    int SafetyScore = 0;
     
     // See if the king has a pawn shield
     SafetyScore += (FriendPawns & combinedMask).count() * TaperedEvaluation(weight, NOPAWNSHIELD_MG, NOPAWNSHIELD_EG);
@@ -100,7 +100,7 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &EnemyPawns, con
 
     static const uint64_t Msquares = 0x1818000000;
 
-    float Score = 0.0f;
+    int Score = 0;
     int rank = sq.rank();
     int file = sq.file();
 
