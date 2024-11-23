@@ -8,8 +8,8 @@
 
 #define ImmediateMateScore 999999
 
-#define BISHOPPAIR_MG 79
-#define BISHOPPAIR_EG 69
+#define BISHOPPAIR_MG 154
+#define BISHOPPAIR_EG 144
 
 int Evaluation(const chess::Board& board, int Ply){
     chess::GameResult State = board.isGameOver().second;

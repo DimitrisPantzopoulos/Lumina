@@ -50,8 +50,6 @@
 #define QUEENMIDDLESQUAREPRESSURE_EG 1
 #define QUEENDISTANCE_MG -46
 #define QUEENDISTANCE_EG -41
-#define BISHOPPAIR_MG 154
-#define BISHOPPAIR_EG 144
 
 int PiecesValueEval(const chess::PieceType& PieceType, float weight) {
     if      (PieceType == chess::PieceType::PAWN)     {return TaperedEvaluation(weight, PAWN_VALUE_MG, PAWN_VALUE_EG);} 

@@ -18,6 +18,7 @@ using namespace std;
 class Lumina {
     private:
         std::atomic<bool> CanSearch {true};
+        
         KMT KillerMoveTable;
         TT TT;
         

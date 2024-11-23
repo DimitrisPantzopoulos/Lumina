@@ -52,11 +52,12 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
 
     auto TimerThread = std::thread(Timer, Milliseconds, std::ref(CanSearch));
     chess::Move BestMove;
-    int BestEval;
+    int BestEval = Ninfinity;
+    int LastValidEval = 0; // Initialize to a neutral or reasonable default score.
 
     chess::Movelist LegalMoves = OrderMoves(board, BestMove, 0);
 
-    for (int PlyRemaining=1; PlyRemaining < 256; PlyRemaining++) {
+    for (int PlyRemaining = 1; PlyRemaining < 256; PlyRemaining++) {
         BestEval = Ninfinity;
 
         for (const auto &move : LegalMoves) {
@@ -64,7 +65,9 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
             int eval = -Search(board, StartingPly, PlyRemaining, Ninfinity, Infinity, 0);
             board.unmakeMove(move);
 
-            if (!CanSearch) { break; }
+            if (!CanSearch) { 
+                break; 
+            }
 
             if (eval > BestEval) {
                 BestEval = eval;
@@ -76,11 +79,17 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
             #endif
         }
 
+        if (BestEval != Ninfinity) {
+            LastValidEval = BestEval; // Update LastValidEval if this depth was completed.
+        }
+
         #ifdef BENCHMARK
             std::cout << "Searched Depth: " << PlyRemaining << " BestMove: " << BestMove << " Eval: " << BestEval << std::endl;
         #endif
 
-        if (!CanSearch) { break; }
+        if (!CanSearch) { 
+            break; 
+        }
 
         LegalMoves = OrderMoves(board, BestMove, 0);
     }
@@ -93,6 +102,10 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
 
     if (TimerThread.joinable()) {
         TimerThread.join();
+    }
+
+    if (BestEval == Ninfinity) {
+        BestEval = LastValidEval; // Fallback to the last valid evaluation.
     }
 
     std::cout << "info score cp " << BestEval << std::endl;

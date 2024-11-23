@@ -7,8 +7,8 @@
 #include <vector>
 #include <ctime> 
 
-#define MAX_TT_SIZE_IN_MB 64
 #define BYTES_IN_A_MB 1048576
+#define MAX_TT_SIZE_IN_MB 64
 #define TT_ENTRY_SIZE 16
 
 #define MAX_TT_SIZE (BYTES_IN_A_MB * MAX_TT_SIZE_IN_MB) / TT_ENTRY_SIZE
