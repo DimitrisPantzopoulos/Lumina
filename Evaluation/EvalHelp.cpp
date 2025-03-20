@@ -6,89 +6,6 @@
 #include <cmath>
 #include <map>
 
-constexpr int PAWN_VALUE_MG = 286;
-constexpr int PAWN_VALUE_EG = 319;
-
-constexpr int KNIGHT_VALUE_MG = 975;
-constexpr int KNIGHT_VALUE_EG = 867;
-
-constexpr int BISHOP_VALUE_MG = 952;
-constexpr int BISHOP_VALUE_EG = 981;
-
-constexpr int ROOK_VALUE_MG = 1458;
-constexpr int ROOK_VALUE_EG = 1716;
-
-constexpr int QUEEN_VALUE_MG = 3412;
-constexpr int QUEEN_VALUE_EG = 3151;
-
-constexpr int NOPAWNSHIELD_MG = 7;
-constexpr int NOPAWNSHIELD_EG = 15;
-
-constexpr int VQUEENSCOREMG = -18;
-constexpr int VQUEENSCOREEG = -5;
-
-constexpr int ISOLATEDPAWN_MG = -19;
-constexpr int ISOLATEDPAWN_EG = -15;
-
-constexpr int DOUBLEDPAWN_MG = -40;
-constexpr int DOUBLEDPAWN_EG = -29;
-
-constexpr int CENTREPAWN_MG = -4;
-constexpr int CENTREPAWN_EG = -8;
-
-constexpr int PHALANXBONUS_MG = 2;
-constexpr int PHALANXBONUS_EG = 6;
-
-constexpr int KNIGHTOUTPOST_MG = 82;
-constexpr int KNIGHTOUTPOST_EG = 71;
-
-constexpr int KNIGHTMOBILITY_MG = 35;
-constexpr int KNIGHTMOBILITY_EG = 29;
-
-constexpr int ROOKOPENFILE_MG = 43;
-constexpr int ROOKOPENFILE_EG = 64;
-
-constexpr int ROOKBACKRANK_MG = 77;
-constexpr int ROOKBACKRANK_EG = 57;
-
-constexpr int ROOKMOBILITY_MG = 16;
-constexpr int ROOKMOBILITY_EG = 17;
-
-constexpr int BISHOPOPENFILE_MG = 13;
-constexpr int BISHOPOPENFILE_EG = 19;
-
-constexpr int BISHOPFIXEDPAWNS_MG = -5;
-constexpr int BISHOPFIXEDPAWNS_EG = 5;
-
-constexpr int BISHOPMOBILITY_MG = 24;
-constexpr int BISHOPMOBILITY_EG = 26;
-
-constexpr int QUEENMOBILITY_MG = -10;
-constexpr int QUEENMOBILITY_EG = -13;
-
-constexpr int QUEENMIDDLESQUAREPRESSURE_MG = 4;
-constexpr int QUEENMIDDLESQUAREPRESSURE_EG = 1;
-
-constexpr int QUEENDISTANCE_MG = -46;
-constexpr int QUEENDISTANCE_EG = -41;
-
-int PiecesValueEval(const int& PieceType, float weight) {
-    switch (static_cast<int>(PieceType)) {
-        case 0: // PAWN
-            return TaperedEvaluation(weight, PAWN_VALUE_MG, PAWN_VALUE_EG);
-        case 1: // KNIGHT
-            return TaperedEvaluation(weight, KNIGHT_VALUE_MG, KNIGHT_VALUE_EG);
-        case 2: // BISHOP
-            return TaperedEvaluation(weight, BISHOP_VALUE_MG, BISHOP_VALUE_EG);
-        case 3: // ROOK
-            return TaperedEvaluation(weight, ROOK_VALUE_MG, ROOK_VALUE_EG);
-        case 4: // QUEEN
-            return TaperedEvaluation(weight, QUEEN_VALUE_MG, QUEEN_VALUE_EG);
-        default:
-            return  0;
-    }
-}
-
 int SafetyScore(const chess::Square &KSq, const chess::Bitboard& occ ,const chess::Bitboard &FriendPawns, float weight, bool isWhite) {
     int file = KSq.file();
     int rank = KSq.rank();
@@ -101,14 +18,14 @@ int SafetyScore(const chess::Square &KSq, const chess::Bitboard& occ ,const ches
     uint64_t rightFileMask = (file < 7) ? 0x0101010101010101ULL << (file + 1) : 0;
 
     // Combine the masks
-    uint64_t combinedMask = (fileMask | leftFileMask | rightFileMask);
+    uint64_t CombinedMask = (fileMask | leftFileMask | rightFileMask);
 
     int SafetyScore = 0;
     
     // See if the king has a pawn shield
-    SafetyScore += (FriendPawns & combinedMask).count() * TaperedEvaluation(weight, NOPAWNSHIELD_MG, NOPAWNSHIELD_EG);
+    SafetyScore += (FriendPawns & CombinedMask).count() * TaperedEvaluation(weight, NOPAWNSHIELD_MG, NOPAWNSHIELD_EG);
 
-    // Virtual Queen Score  
+    // Virtual Queen Score
     SafetyScore += chess::attacks::queen(KSq, occ).count() * TaperedEvaluation(weight, VQUEENSCOREMG, VQUEENSCOREEG);
 
     return SafetyScore;
@@ -124,40 +41,39 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &EnemyPawns, con
     int rank = sq.rank();
     int file = sq.file();
 
-    chess::Bitboard PForward;
+    uint64_t PForward;
 
     if (isWhite) {
-        PForward = chess::Bitboard(0xFFFFFFFFFFFFFFFFULL << ((rank + 1) * 8));
+        PForward = 0xFFFFFFFFFFFFFFFFULL << ((rank + 1) * 8);
     } else {
-        PForward = chess::Bitboard(0xFFFFFFFFFFFFFFFFULL >> ((rank) * 8));
+        PForward = 0xFFFFFFFFFFFFFFFFULL >> ((rank) * 8);
     }
 
     // Create a bitboard for the same file
-    chess::Bitboard fileMask(0x0101010101010101ULL << file);
+    uint64_t fileMask(0x0101010101010101ULL << file);
 
     // Create bitboards for the adjacent files
-    chess::Bitboard leftFileMask ((file > 0) ? 0x0101010101010101ULL << (file - 1) : 0);
-    chess::Bitboard rightFileMask((file < 7) ? 0x0101010101010101ULL << (file + 1) : 0);
+    uint64_t leftFileMask ((file > 0) ? 0x0101010101010101ULL << (file - 1) : 0);
+    uint64_t rightFileMask((file < 7) ? 0x0101010101010101ULL << (file + 1) : 0);
 
     // Combine the masks
-    chess::Bitboard combinedMask = fileMask | leftFileMask | rightFileMask;
+    uint64_t CombinedMask = fileMask | leftFileMask | rightFileMask;
 
     // Apply the forward mask to get the relevant bits in front of the pawn
-    chess::Bitboard PawnBits = PForward & combinedMask;
+    uint64_t PawnBits = PForward & CombinedMask;
 
-    //Check if there are any opposing pawns in the relevant bits (Passed Pawn)
-    //Or they are infront of the king which can be used to accellerate an attack on the king (Pawn Storm Heuristic)
+    // Check if there are any opposing pawns in the relevant bits (Passed Pawn)
+    // Or they are infront of the king which can be used to accellerate an attack on the king (Pawn Storm Heuristic)
     if ((PawnBits & EnemyPawns) == 0) {
         if (isWhite) {
-            
             Score += TaperedEvaluation(weight, PawnBonuses[7 - rank], PawnBonusesEG[7 - rank]);
         } else {
             Score += TaperedEvaluation(weight, PawnBonuses[rank], PawnBonusesEG[rank]);
         }
     }
 
-    chess::Bitboard sameFilePawns(fileMask & FriendPawns.getBits());
-    chess::Bitboard currentPawnPosition(1ULL << sq.index());
+    uint64_t sameFilePawns(fileMask & FriendPawns.getBits());
+    uint64_t currentPawnPosition(1ULL << sq.index());
 
     // Check if there are any other pawns on the same file (excluding the current pawn)
     if ((sameFilePawns & ~currentPawnPosition) != 0) {
@@ -174,11 +90,11 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &EnemyPawns, con
         Score += TaperedEvaluation(weight, CENTREPAWN_MG, CENTREPAWN_EG);
     }
 
-    // Check for Phalanx Pawns
-    chess::Bitboard PawnRank(0xFFULL << (rank * 8));
-    PawnRank &= leftFileMask | rightFileMask;
-
     if((isWhite && rank != 2) || (!isWhite && rank != 7)){
+        // Check for Phalanx Pawns
+        chess::Bitboard PawnRank(0xFFULL << (rank * 8));
+        PawnRank &= leftFileMask | rightFileMask;
+
         Score += (PawnRank & FriendPawns).count() * TaperedEvaluation(weight, PHALANXBONUS_MG, PHALANXBONUS_EG);
     }
 
@@ -196,10 +112,10 @@ int EvaluateKnight(const chess::Square &sq, const chess::Bitboard& EnemyPawns, c
     uint64_t KBackward;
 
     if (isWhite) {
-        KForward = (rank > 0) ? 0xFFFFFFFFFFFFFFFFULL << ((rank+1) * 8) : 0;
+        KForward  = (rank > 0) ? 0xFFFFFFFFFFFFFFFFULL << ((rank+1) * 8) : 0;
         KBackward = (sq.index() >= 9 ? 0x5ULL << (sq.index() - 9) : 0) & ~0x8181818181818181;
     }else {
-        KForward = (rank < 7) ? 0xFFFFFFFFFFFFFFFFULL >> ((rank) * 8) : 0;
+        KForward  = (rank < 7) ? 0xFFFFFFFFFFFFFFFFULL >> ((rank) * 8) : 0;
         KBackward = (sq.index() <= 56 ? 0x5ULL << (sq.index() + 7) : 0) & ~0x8181818181818181;
     }
 
@@ -253,19 +169,19 @@ int EvaluateRooks(const chess::Square &sq, const chess::Bitboard& EnemyPawns, co
     return Score;
 }
 
-int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const chess::Bitboard& EnemyPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& EnemyPawnsSq, float weight, bool isWhite){
-    static const chess::Bitboard LIGHT_SQUARES= chess::Bitboard(0x55AA55AA55AA55AAULL);
-    static const chess::Bitboard DARK_SQUARES = chess::Bitboard(0xAA55AA55AA55AA55ULL);
+int EvaluateBishop(const chess::Square &sq, const chess::Bitboard& occ, const chess::Bitboard& EnemyPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& EnemyPawnsSq, float weight, bool isWhite){
+    static constexpr uint64_t LIGHT_SQUARES = 0x55AA55AA55AA55AAULL;
+    static constexpr uint64_t DARK_SQUARES  = 0xAA55AA55AA55AA55ULL;
+
+    int rank = sq.rank();
 
     chess::Bitboard BishopBitBoard = chess::attacks::bishop(sq, occ);
-    
-    int rank = sq.rank();
 
     // Create a combined mask which has both friendly and opposition pawns
     chess::Bitboard CombinedMask = FriendPawns | EnemyPawns;
 
     // Create a forwards mask to delete all behind moves
-    chess::Bitboard BForward;
+    uint64_t BForward;
 
     if (isWhite) {
         BForward = 0xFFFFFFFFFFFFFFFFULL << ((rank + 1) * 8);
@@ -288,12 +204,12 @@ int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const che
     int NoOfPawns;
 
     // Is bishop light or dark squared?
-    if((chess::Bitboard(1ULL << sq.index()) & LIGHT_SQUARES) != 0){
+    if(((1ULL << sq.index()) & LIGHT_SQUARES) != 0){
         // If its a light squared bishop
 
         // Find how many total pawns there are blocking the bishop
         chess::Bitboard WhiteSquaredPawns = (LIGHT_SQUARES & FriendPawns) & BForward;
-        NoOfPawns = (WhiteSquaredPawns).count();
+        NoOfPawns = WhiteSquaredPawns.count();
 
         // Find out how many Fixed pawns Pawns that dont move are in the position
         if(isWhite){
@@ -305,7 +221,8 @@ int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const che
     }else{
         // Find how many total pawns there are blocking the bishop
         chess::Bitboard BlackSquaredPawns = (DARK_SQUARES & FriendPawns) & BForward;
-        NoOfPawns = (BlackSquaredPawns).count();
+
+        NoOfPawns = BlackSquaredPawns.count();
 
         // Find out how many Fixed pawns Pawns that dont move are in the position
         if(isWhite){
@@ -323,7 +240,7 @@ int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const che
     return Score;
 }
 
-int EvaluateQueen(const chess::Square &sq, const chess::Board& board, const chess::Bitboard& EnemyPawns, const chess::Bitboard occ, const chess::Color EnemyColor, float weight){
+int EvaluateQueen(const chess::Square &sq, const chess::Board& board, const chess::Bitboard& EnemyPawns, const chess::Bitboard& occ, const chess::Color EnemyColor, float weight){
     static const chess::Bitboard Msquares = chess::Bitboard(0x1818000000ULL);
 
     int Score = 0;

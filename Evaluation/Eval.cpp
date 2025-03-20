@@ -3,7 +3,6 @@
 #include "..\PST\PST.h"
 
 #include "EvalHelp.h"
-#include "Eval.h"
 #include <map>
 
 #define ImmediateMateScore 999999
@@ -15,9 +14,9 @@ int Evaluation(const chess::Board& board, int Ply){
     chess::GameResult State = board.isGameOver().second;
 
     if(State != chess::GameResult::NONE){
-        if(State == chess::GameResult::WIN)      {return  (ImmediateMateScore - Ply);}
-        else if(State == chess::GameResult::LOSE){return -(ImmediateMateScore - Ply);}
-        else if(State == chess::GameResult::DRAW){return 0;}
+        if     (State == chess::GameResult::WIN)  {return  (ImmediateMateScore - Ply);}
+        else if(State == chess::GameResult::LOSE) {return -(ImmediateMateScore - Ply);}
+        else if(State == chess::GameResult::DRAW) {return 0;}
     }
 
     int Perspective = board.sideToMove() == chess::Color::WHITE ? 1 : -1;
@@ -27,11 +26,29 @@ int Evaluation(const chess::Board& board, int Ply){
     chess::Bitboard WPawns = board.pieces(chess::PieceType::PAWN, chess::Color::WHITE);
     chess::Bitboard BPawns = board.pieces(chess::PieceType::PAWN, chess::Color::BLACK);
     
-    // TODO: OPTIMIZE THIS WE ONLY NEED TO CALCULATE THIS WHEN THERE ARE KNIGHTS ON THE BOARD
+    chess::Bitboard WKnights = board.pieces(chess::PieceType::KNIGHT, chess::Color::WHITE);
+    chess::Bitboard BKnights = board.pieces(chess::PieceType::KNIGHT, chess::Color::BLACK);
+
+    chess::Bitboard WBishop = board.pieces(chess::PieceType::BISHOP, chess::Color::WHITE);
+    chess::Bitboard BBishop = board.pieces(chess::PieceType::BISHOP, chess::Color::BLACK);
+
     chess::Bitboard WPawnsSq = GetPawnControlledSquares(WPawns, chess::Color::WHITE);
-    chess::Bitboard BPawnsSq = GetPawnControlledSquares(BPawns, chess::Color::BLACK);
+    chess::Bitboard BPawnsSq = GetPawnControlledSquares(WPawns, chess::Color::WHITE);
+
+    // if (WKnights != 0 || WBishop != 0) {WPawnsSq = GetPawnControlledSquares(WPawns, chess::Color::WHITE);}
+    // if (BKnights != 0 || BBishop != 0) {BPawnsSq = GetPawnControlledSquares(BPawns, chess::Color::BLACK);}
 
     //We get the bitboards for both sides to combine them
+    // chess::Bitboard WhiteBitboard = WPawns | WKnights | WBishop |
+    //                                 board.pieces(chess::PieceType::ROOK,  chess::Color::WHITE) |
+    //                                 board.pieces(chess::PieceType::QUEEN, chess::Color::WHITE) | 
+    //                                 board.pieces(chess::PieceType::KING,  chess::Color::WHITE);
+
+    // chess::Bitboard BlackBitboard = BPawns | BKnights | BBishop |
+    //                                 board.pieces(chess::PieceType::ROOK,  chess::Color::BLACK) |
+    //                                 board.pieces(chess::PieceType::QUEEN, chess::Color::BLACK) | 
+    //                                 board.pieces(chess::PieceType::KING,  chess::Color::BLACK);
+
     chess::Bitboard WhiteBitboard = board.us(chess::Color::WHITE);
     chess::Bitboard BlackBitboard = board.us(chess::Color::BLACK);
 
@@ -51,7 +68,6 @@ int Evaluation(const chess::Board& board, int Ply){
 
     // Calculate the weight for endgame influence
     // Get the Weight form the opposition's side to know when to get aggresive
-    // TODO: WE CAN PRECOMPUTE THIS ASWELL
     float WEndgameWeight = static_cast<float>(WhiteBitboard.count()) / 32.0f;
     float BEndgameWeight = static_cast<float>(BlackBitboard.count()) / 32.0f;
 
