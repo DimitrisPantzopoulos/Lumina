@@ -1,4 +1,4 @@
-#include "..\ChessLib\chess-library-master\include\chess.hpp"
+#include "..\ChessLib\chess-library\include\chess.hpp"
 #include "..\Helper\SEE.h"
 #include "..\Lumina.h"
 #include "..\Helper\HelperFunctions.h"

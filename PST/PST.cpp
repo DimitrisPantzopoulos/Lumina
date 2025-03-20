@@ -1,4 +1,4 @@
-#include "..\ChessLib\chess-library-master\include\chess.hpp"
+#include "..\ChessLib\chess-library\include\chess.hpp"
 #include "..\Helper\HelperFunctions.h"
 #include "PST.h"
 
@@ -96,26 +96,24 @@ static const array<int, 64> eg_king_table = {
     -302, -104, -58, -47, -46, -97, -131, -282
 };
 
-int PST(const Piece &piece, int squareIndex, float& endgameWeight){
-    PieceType pieceType = piece.type();
-    Color PieceColor = piece.color();
+int PST(const int& PieceType, const bool PieceColor, int SquareIndex, float EndgameWeight){
+    SquareIndex = PieceColor ? SquareIndex : 63 - SquareIndex;
 
-    squareIndex = PieceColor == Color::WHITE ? squareIndex : 63 - squareIndex;
-    
-    if (pieceType == chess::PieceType::PAWN) {
-        return TaperedEvaluation(endgameWeight, mg_pawn_table[squareIndex], eg_pawn_table[squareIndex]);
-    } else if (pieceType == chess::PieceType::KNIGHT) {
-        return mg_knight_table[squareIndex];
-    } else if (pieceType == chess::PieceType::BISHOP) {
-        return mg_bishop_table[squareIndex];
-    } else if (pieceType == chess::PieceType::ROOK) {
-        return mg_rook_table[squareIndex];
-    } else if (pieceType == chess::PieceType::QUEEN) {
-        return mg_queen_table[squareIndex];
-    } else if (pieceType == chess::PieceType::KING) {
-        return TaperedEvaluation(endgameWeight, mg_king_table[squareIndex], eg_king_table[squareIndex]);
-    } else {
-        return 0;
+    switch (static_cast<int>(PieceType)) {
+        case 0: // PAWN
+            return TaperedEvaluation(EndgameWeight, mg_pawn_table[SquareIndex], eg_pawn_table[SquareIndex]);
+        case 1: // KNIGHT
+            return mg_knight_table[SquareIndex];
+        case 2: // BISHOP
+            return mg_bishop_table[SquareIndex];
+        case 3: // ROOK
+            return mg_rook_table[SquareIndex];
+        case 4: // QUEEN
+            return mg_queen_table[SquareIndex];
+        case 5: // KING
+            return TaperedEvaluation(EndgameWeight, mg_king_table[SquareIndex], eg_king_table[SquareIndex]);
+        default:
+            return  0;
     }
 }
 

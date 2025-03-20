@@ -1,7 +1,7 @@
 #ifndef EVAL_H
 #define EVAL_H
 
-#include "..\ChessLib\chess-library-master\include\chess.hpp"
+#include "..\ChessLib\chess-library\include\chess.hpp"
 #include "..\PST\PST.h"
 #include <map>
 

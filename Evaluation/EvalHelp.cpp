@@ -1,4 +1,4 @@
-#include "..\ChessLib\chess-library-master\include\chess.hpp"
+#include "..\ChessLib\chess-library\include\chess.hpp"
 #include "..\Helper\HelperFunctions.h"
 #include "EvalHelp.h"
 
@@ -6,82 +6,102 @@
 #include <cmath>
 #include <map>
 
-#define PAWN_VALUE_MG 286
-#define PAWN_VALUE_EG 319
-#define KNIGHT_VALUE_MG 975
-#define KNIGHT_VALUE_EG 867
-#define BISHOP_VALUE_MG 952
-#define BISHOP_VALUE_EG 981
-#define ROOK_VALUE_MG 1458
-#define ROOK_VALUE_EG 1716
-#define QUEEN_VALUE_MG 3412
-#define QUEEN_VALUE_EG 3151
-#define NOPAWNSHIELD_MG 7
-#define NOPAWNSHIELD_EG 15
-#define VQUEENSCOREMG -18
-#define VQUEENSCOREEG -5
-#define ISOLATEDPAWN_MG -19
-#define ISOLATEDPAWN_EG -15
-#define DOUBLEDPAWN_MG -40
-#define DOUBLEDPAWN_EG -29
-#define CENTREPAWN_MG -4
-#define CENTREPAWN_EG -8
-#define PHALANXBONUS_MG 2
-#define PHALANXBONUS_EG 6
-#define KNIGHTOUTPOST_MG 82
-#define KNIGHTOUTPOST_EG 71
-#define KNIGHTMOBILITY_MG 35
-#define KNIGHTMOBILITY_EG 29
-#define ROOKOPENFILE_MG 43
-#define ROOKOPENFILE_EG 64
-#define ROOKBACKRANK_MG 77
-#define ROOKBACKRANK_EG 57
-#define ROOKMOBILITYMG 16
-#define ROOKMOBILITYEG 17
-#define BISHOPOPENFILE_MG 13
-#define BISHOPOPENFILE_EG 19
-#define BISHOPFIXEDPAWNS_MG -5
-#define BISHOPFIXEDPAWNS_EG 5
-#define BISHOPMOBILITYMG 24
-#define BISHOPMOBILITYEG 26
-#define QUEENMOBILITY_MG -10
-#define QUEENMOBILITY_EG -13
-#define QUEENMIDDLESQUAREPRESSURE_MG 4
-#define QUEENMIDDLESQUAREPRESSURE_EG 1
-#define QUEENDISTANCE_MG -46
-#define QUEENDISTANCE_EG -41
+constexpr int PAWN_VALUE_MG = 286;
+constexpr int PAWN_VALUE_EG = 319;
 
-int PiecesValueEval(const chess::PieceType& PieceType, float weight) {
-    if      (PieceType == chess::PieceType::PAWN)     {return TaperedEvaluation(weight, PAWN_VALUE_MG, PAWN_VALUE_EG);} 
-    else if (PieceType == chess::PieceType::KNIGHT)   {return TaperedEvaluation(weight, KNIGHT_VALUE_MG, KNIGHT_VALUE_EG);}
-    else if (PieceType == chess::PieceType::BISHOP)   {return TaperedEvaluation(weight, BISHOP_VALUE_MG, BISHOP_VALUE_EG);} 
-    else if (PieceType == chess::PieceType::ROOK)     {return TaperedEvaluation(weight, ROOK_VALUE_MG, ROOK_VALUE_EG);}
-    else if (PieceType == chess::PieceType::QUEEN)    {return TaperedEvaluation(weight, QUEEN_VALUE_MG, QUEEN_VALUE_EG);}
+constexpr int KNIGHT_VALUE_MG = 975;
+constexpr int KNIGHT_VALUE_EG = 867;
 
-    return 0;
+constexpr int BISHOP_VALUE_MG = 952;
+constexpr int BISHOP_VALUE_EG = 981;
+
+constexpr int ROOK_VALUE_MG = 1458;
+constexpr int ROOK_VALUE_EG = 1716;
+
+constexpr int QUEEN_VALUE_MG = 3412;
+constexpr int QUEEN_VALUE_EG = 3151;
+
+constexpr int NOPAWNSHIELD_MG = 7;
+constexpr int NOPAWNSHIELD_EG = 15;
+
+constexpr int VQUEENSCOREMG = -18;
+constexpr int VQUEENSCOREEG = -5;
+
+constexpr int ISOLATEDPAWN_MG = -19;
+constexpr int ISOLATEDPAWN_EG = -15;
+
+constexpr int DOUBLEDPAWN_MG = -40;
+constexpr int DOUBLEDPAWN_EG = -29;
+
+constexpr int CENTREPAWN_MG = -4;
+constexpr int CENTREPAWN_EG = -8;
+
+constexpr int PHALANXBONUS_MG = 2;
+constexpr int PHALANXBONUS_EG = 6;
+
+constexpr int KNIGHTOUTPOST_MG = 82;
+constexpr int KNIGHTOUTPOST_EG = 71;
+
+constexpr int KNIGHTMOBILITY_MG = 35;
+constexpr int KNIGHTMOBILITY_EG = 29;
+
+constexpr int ROOKOPENFILE_MG = 43;
+constexpr int ROOKOPENFILE_EG = 64;
+
+constexpr int ROOKBACKRANK_MG = 77;
+constexpr int ROOKBACKRANK_EG = 57;
+
+constexpr int ROOKMOBILITY_MG = 16;
+constexpr int ROOKMOBILITY_EG = 17;
+
+constexpr int BISHOPOPENFILE_MG = 13;
+constexpr int BISHOPOPENFILE_EG = 19;
+
+constexpr int BISHOPFIXEDPAWNS_MG = -5;
+constexpr int BISHOPFIXEDPAWNS_EG = 5;
+
+constexpr int BISHOPMOBILITY_MG = 24;
+constexpr int BISHOPMOBILITY_EG = 26;
+
+constexpr int QUEENMOBILITY_MG = -10;
+constexpr int QUEENMOBILITY_EG = -13;
+
+constexpr int QUEENMIDDLESQUAREPRESSURE_MG = 4;
+constexpr int QUEENMIDDLESQUAREPRESSURE_EG = 1;
+
+constexpr int QUEENDISTANCE_MG = -46;
+constexpr int QUEENDISTANCE_EG = -41;
+
+int PiecesValueEval(const int& PieceType, float weight) {
+    switch (static_cast<int>(PieceType)) {
+        case 0: // PAWN
+            return TaperedEvaluation(weight, PAWN_VALUE_MG, PAWN_VALUE_EG);
+        case 1: // KNIGHT
+            return TaperedEvaluation(weight, KNIGHT_VALUE_MG, KNIGHT_VALUE_EG);
+        case 2: // BISHOP
+            return TaperedEvaluation(weight, BISHOP_VALUE_MG, BISHOP_VALUE_EG);
+        case 3: // ROOK
+            return TaperedEvaluation(weight, ROOK_VALUE_MG, ROOK_VALUE_EG);
+        case 4: // QUEEN
+            return TaperedEvaluation(weight, QUEEN_VALUE_MG, QUEEN_VALUE_EG);
+        default:
+            return  0;
+    }
 }
 
 int SafetyScore(const chess::Square &KSq, const chess::Bitboard& occ ,const chess::Bitboard &FriendPawns, float weight, bool isWhite) {
     int file = KSq.file();
     int rank = KSq.rank();
 
-    uint64_t KForward;
-
-    if (isWhite) {
-        KForward = 0xFFFFFFFFFFFFFFFFULL << ((rank + 1) * 8);
-    } else {
-        KForward = 0xFFFFFFFFFFFFFFFFULL >> ((rank) * 8);
-    }
-
     // Check if King on open file
     uint64_t fileMask = 0x0101010101010101ULL << file;
 
     // Create bitboards for the adjacent files
-    uint64_t leftFileMask = (file > 0) ? 0x0101010101010101ULL << (file - 1) : 0;
+    uint64_t leftFileMask  = (file > 0) ? 0x0101010101010101ULL << (file - 1) : 0;
     uint64_t rightFileMask = (file < 7) ? 0x0101010101010101ULL << (file + 1) : 0;
 
     // Combine the masks
-    uint64_t combinedMask = (fileMask | leftFileMask | rightFileMask) & KForward;
+    uint64_t combinedMask = (fileMask | leftFileMask | rightFileMask);
 
     int SafetyScore = 0;
     
@@ -228,7 +248,7 @@ int EvaluateRooks(const chess::Square &sq, const chess::Bitboard& EnemyPawns, co
 
     chess::Bitboard RookMoves = chess::attacks::rook(sq, occ);
     
-    Score += RookMoves.count() * TaperedEvaluation(weight, ROOKMOBILITYMG, ROOKMOBILITYEG);
+    Score += RookMoves.count() * TaperedEvaluation(weight, ROOKMOBILITY_MG, ROOKMOBILITY_EG);
 
     return Score;
 }
@@ -298,7 +318,7 @@ int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const che
     // Fixed Pawns are harder to get rid of
     Score += NoOfFixedPawns * TaperedEvaluation(weight, BISHOPFIXEDPAWNS_MG, BISHOPFIXEDPAWNS_EG);
 
-    Score += (BishopBitBoard & ~EnemyPawnsSq).count() * TaperedEvaluation(weight, BISHOPMOBILITYMG, BISHOPMOBILITYEG);
+    Score += (BishopBitBoard & ~EnemyPawnsSq).count() * TaperedEvaluation(weight, BISHOPMOBILITY_MG, BISHOPMOBILITY_EG);
 
     return Score;
 }

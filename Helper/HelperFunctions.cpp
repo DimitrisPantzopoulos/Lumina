@@ -1,28 +1,6 @@
-#include "..\ChessLib\chess-library-master\include\chess.hpp"
+#include "..\ChessLib\chess-library\include\chess.hpp"
 #include "HelperFunctions.h"
 #include <vector>
-
-chess::Bitboard PopLsb(chess::Bitboard& bitboard) {
-    uint64_t bb = bitboard.getBits();
-    bb &= bb - 1;
-    return chess::Bitboard(bb);
-}
-
-std::vector<uint8_t> GetIndexesFromBitBoard(chess::Bitboard& Bitboard){
-    std::vector<uint8_t> Indexes;
-
-    for(int i=0;i<64;i++){
-        if(Bitboard == 0){break;}
-        Indexes.push_back(Bitboard.lsb());
-        Bitboard = PopLsb(Bitboard);
-    }
-
-    return Indexes;
-}
-
-chess::Color OppositeColor(chess::Color color){
-    return color == chess::Color::WHITE ? chess::Color::BLACK : chess::Color::WHITE;
-}
 
 int PiecesValue(const chess::PieceType& PieceType){
     if (PieceType == chess::PieceType::PAWN)        {return 267;}
@@ -37,30 +15,18 @@ int TaperedEvaluation(float& weight, int WeightMG, int WeightEG){
     return static_cast<int>(weight * WeightMG + (1 - weight) * WeightEG);
 }
 
-chess::Bitboard GetPawnControlledSquares(chess::Bitboard pawns,const chess::Color color){
-    std::vector<uint8_t> PawnIndexes = GetIndexesFromBitBoard(pawns);
+chess::Bitboard GetPawnControlledSquares(const chess::Bitboard& pawns, const chess::Color color){
+    uint16_t PawnIndexes = pawns.getBits();
 
-    chess::Bitboard PawnAttackBitboard = chess::Bitboard(0ULL);
+    chess::Bitboard PawnAttackBitboard(0ULL);
 
-    for(const auto &index : PawnIndexes){
-        PawnAttackBitboard |= chess::attacks::pawn(color, index);
+    while (PawnIndexes) {
+        int Index = __builtin_ctzll(PawnIndexes);
+        
+        PawnAttackBitboard |= chess::attacks::pawn(color, Index);
+
+        PawnIndexes &= PawnIndexes - 1;
     }
 
     return PawnAttackBitboard;
-}
-
-chess::Bitboard NorthFill(chess::Bitboard PawnFile){
-    PawnFile |= (PawnFile << 8);
-    PawnFile |= (PawnFile << 16);
-    PawnFile |= (PawnFile << 32);
-
-    return PawnFile;
-}
-
-chess::Bitboard SouthFill(chess::Bitboard PawnFile){
-    PawnFile |= (PawnFile >> 8);
-    PawnFile |= (PawnFile >> 16);
-    PawnFile |= (PawnFile >> 32);
-
-    return PawnFile;
 }

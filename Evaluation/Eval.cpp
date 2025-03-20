@@ -1,4 +1,4 @@
-#include "..\ChessLib\chess-library-master\include\chess.hpp"
+#include "..\ChessLib\chess-library\include\chess.hpp"
 #include "..\Helper\HelperFunctions.h"
 #include "..\PST\PST.h"
 
@@ -23,10 +23,11 @@ int Evaluation(const chess::Board& board, int Ply){
     int Perspective = board.sideToMove() == chess::Color::WHITE ? 1 : -1;
 
     //Get both pawn bitboards which is used in the Bishop Evaluation and the squares which the pawns control because that is used in 
-    //Space and knight evaluation + Rear Spans for each side
+    //Space and knight evaluation
     chess::Bitboard WPawns = board.pieces(chess::PieceType::PAWN, chess::Color::WHITE);
     chess::Bitboard BPawns = board.pieces(chess::PieceType::PAWN, chess::Color::BLACK);
     
+    // TODO: OPTIMIZE THIS WE ONLY NEED TO CALCULATE THIS WHEN THERE ARE KNIGHTS ON THE BOARD
     chess::Bitboard WPawnsSq = GetPawnControlledSquares(WPawns, chess::Color::WHITE);
     chess::Bitboard BPawnsSq = GetPawnControlledSquares(BPawns, chess::Color::BLACK);
 
@@ -40,7 +41,7 @@ int Evaluation(const chess::Board& board, int Ply){
     //Which is probably twice as efficient because we at most have to check 32 squares and not the entire 64 squares on the board
     //Also this function gets more efficient as the game progresses because less pieces = less indexes to check instead of having 
     //to check a constant 64 squares
-    std::vector<uint8_t> Indexes = GetIndexesFromBitBoard(CombinedBitboard);
+    uint64_t Indexes = CombinedBitboard.getBits();
 
     int WhiteScore = 0;
     int BlackScore = 0;
@@ -48,55 +49,70 @@ int Evaluation(const chess::Board& board, int Ply){
     int WhiteBishops = 0;
     int BlackBishops = 0;
 
-    int endgameW = WhiteBitboard.count();
-    int endgameB = BlackBitboard.count();
-
     // Calculate the weight for endgame influence
-    float WEndgameWeight = static_cast<float>(endgameB) / 32.0f; //Get the Weight form the opposition's side to know when to get aggresive
-    float BEndgameWeight = static_cast<float>(endgameW) / 32.0f;
+    // Get the Weight form the opposition's side to know when to get aggresive
+    // TODO: WE CAN PRECOMPUTE THIS ASWELL
+    float WEndgameWeight = static_cast<float>(WhiteBitboard.count()) / 32.0f;
+    float BEndgameWeight = static_cast<float>(BlackBitboard.count()) / 32.0f;
 
     chess::Square WKsq = board.kingSq(chess::Color::WHITE);
     chess::Square BKsq = board.kingSq(chess::Color::BLACK);
 
-    for(const auto &index : Indexes){
-        chess::Square Sq = chess::Square(index);
+    while (Indexes) {
+        // Get the Index
+        int Index = __builtin_ctzll(Indexes);
 
-        chess::Piece Board_at = board.at(Sq); 
-        chess::PieceType PieceType = Board_at.type();
-        bool Color = (Board_at.color() == chess::Color::WHITE);
-        
+        chess::Square Sq = chess::Square(Index);
+
+        int  PieceType = static_cast<int>(board.at(Sq).type());
+        bool Color     = board.at(Sq).color() == chess::Color::WHITE;
+
         if(Color){
-            WhiteScore += PiecesValueEval(PieceType, BEndgameWeight) + PST(Board_at, index, BEndgameWeight);
+            WhiteScore += PiecesValueEval(PieceType, BEndgameWeight) + PST(PieceType, true, Index, BEndgameWeight);
 
-            if(PieceType == chess::PieceType::PAWN){
-                WhiteScore += EvaluatePawn(Sq, BPawns, WPawns, BEndgameWeight, true);
-            }else if(PieceType == chess::PieceType::KNIGHT){
-                WhiteScore += EvaluateKnight(Sq, BPawns, WPawns, BPawnsSq, BEndgameWeight, true);
-            }else if(PieceType == chess::PieceType::ROOK){
-                WhiteScore += EvaluateRooks(Sq, BPawns, WPawns, CombinedBitboard, BEndgameWeight, true);
-            }else if(PieceType == chess::PieceType::BISHOP){
-                WhiteScore += EvaluateBishop(Sq, CombinedBitboard, BPawns, WPawns, BPawnsSq, BEndgameWeight, true);
-                WhiteBishops++;
-            }else if(PieceType == chess::PieceType::QUEEN){
-                WhiteScore += EvaluateQueen(Sq, board, BPawns, CombinedBitboard, chess::Color::BLACK, BEndgameWeight);
+            switch (PieceType){
+                case 0: // PAWN
+                    WhiteScore += EvaluatePawn(Sq, BPawns, WPawns, BEndgameWeight, true);
+                    break;
+                case 1: // KNIGHT
+                    WhiteScore += EvaluateKnight(Sq, BPawns, WPawns, BPawnsSq, BEndgameWeight, true);
+                    break;
+                case 2: // BISHOP
+                    WhiteScore += EvaluateBishop(Sq, CombinedBitboard, BPawns, WPawns, BPawnsSq, BEndgameWeight, true);
+                    WhiteBishops++;
+                    break;
+                case 3: // ROOKS
+                    WhiteScore += EvaluateRooks(Sq, BPawns, WPawns, CombinedBitboard, BEndgameWeight, true);
+                    break;
+                case 4:
+                    WhiteScore += EvaluateQueen(Sq, board, BPawns, CombinedBitboard, chess::Color::BLACK, BEndgameWeight);
+                    break;
             }
 
         }else{
-            BlackScore += PiecesValueEval(PieceType, WEndgameWeight) + PST(Board_at, index, WEndgameWeight);
+            BlackScore += PiecesValueEval(PieceType, WEndgameWeight) + PST(PieceType, false, Index, WEndgameWeight);
 
-            if(PieceType == chess::PieceType::PAWN){
-                BlackScore += EvaluatePawn(Sq, WPawns, BPawns, WEndgameWeight, false);
-            }else if(PieceType == chess::PieceType::KNIGHT){
-                BlackScore += EvaluateKnight(Sq, WPawns, BPawns, WPawnsSq, WEndgameWeight, false);
-            }else if(PieceType == chess::PieceType::ROOK){
-                BlackScore += EvaluateRooks(Sq, WPawns, BPawns, CombinedBitboard, WEndgameWeight, false);
-            }else if(PieceType == chess::PieceType::BISHOP){
-                BlackScore += EvaluateBishop(Sq, CombinedBitboard, WPawns, BPawns, WPawnsSq, WEndgameWeight, false);
-                BlackBishops++;
-            }else if(PieceType == chess::PieceType::QUEEN){
-                BlackScore += EvaluateQueen(Sq, board, WPawns, CombinedBitboard, chess::Color::WHITE, WEndgameWeight);
+            switch (PieceType){
+                case 0: // PAWN
+                    BlackScore += EvaluatePawn(Sq, WPawns, BPawns, WEndgameWeight, false);
+                    break;
+                case 1: // KNIGHT
+                    BlackScore += EvaluateKnight(Sq, WPawns, BPawns, WPawnsSq, WEndgameWeight, false);
+                    break;
+                case 2: // BISHOP
+                    BlackScore += EvaluateBishop(Sq, CombinedBitboard, WPawns, BPawns, WPawnsSq, WEndgameWeight, false);
+                    BlackBishops++;
+                    break;
+                case 3: // ROOK 
+                    BlackScore += EvaluateRooks(Sq, WPawns, BPawns, CombinedBitboard, WEndgameWeight, false);
+                    break;
+                case 4: // QUEEN
+                    BlackScore += EvaluateQueen(Sq, board, WPawns, CombinedBitboard, chess::Color::WHITE, WEndgameWeight);
+                    break;
             }
         }
+
+        Indexes &= Indexes - 1;
     }
 
     WhiteScore += WhiteBishops > 1 ? TaperedEvaluation(BEndgameWeight, BISHOPPAIR_MG, BISHOPPAIR_EG) : 0;
