@@ -32,7 +32,7 @@ bool SEE(const chess::Board& board, const chess::Move& move, const int Threshold
 
     chess::Bitboard Queens  = board.pieces(chess::PieceType::QUEEN);
     chess::Bitboard Bishops = board.pieces(chess::PieceType::BISHOP);
-    chess::Bitboard Rooks   = board.pieces(chess::PieceType::ROOK);
+    chess::Bitboard Rooks = board.pieces(chess::PieceType::ROOK);
 
     chess::Color EnemyColor = ~board.at(TargetOrigin).color();
 

@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <vector>
 
-// Values and small bits of the code based off Small-Brains Implementation - https://github.com/Disservin/Smallbrain/blob/main/src/movepick.h#L153 by Disservin
+//Values and small bits of the code based off Small-Brains Implementation - https://github.com/Disservin/Smallbrain/blob/main/src/movepick.h#L153 by Disservin
 enum MoveTypes : int {
     HASH_SCORE          =  10000000,
     CAPTURE_SCORE       =  7000000,
@@ -28,14 +28,14 @@ chess::Movelist Lumina::OrderMoves(chess::Board& board, chess::Move& HashMove, c
 {
     chess::Movelist KillerMoves = KillerMoveTable.getKillerMoves(Ply);
 
-    chess::Color OppColor = ~board.sideToMove();
+    chess::Color OppColor = board.sideToMove() == chess::Color::WHITE ? chess::Color::BLACK : chess::Color::WHITE;
 
     chess::Movelist Moves;
     chess::movegen::legalmoves(Moves, board);
 
     std::vector<ScoredMove> ScoredMoves;
 
-    // Extract the sorted moves into a Movelist
+    //Extract the sorted moves into a Movelist
     chess::Movelist SortedMoves;
 
     for (const auto &move : Moves){
@@ -68,7 +68,7 @@ chess::Movelist Lumina::OrderMoves(chess::Board& board, chess::Move& HashMove, c
             Score += SEE(board, move, 0) ? CAPTURE_SCORE + (VictimScore - AttackerScore) : (VictimScore - AttackerScore);
         }
 
-        // Promotions are likely to be good
+        // // Promotions are likely to be good
         else if(move.typeOf() == chess::Move::PROMOTION){
             chess::PieceType PromotionType = move.promotionType();
             Score += PiecesValue(PromotionType);
