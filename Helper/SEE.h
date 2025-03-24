@@ -7,6 +7,6 @@
 
 #include <vector>
 
-bool SEE(const chess::Board& board, const chess::Move& move, const int Threshold); //TODO: FIND THE CORRECT THRESHOLD
+bool SEE(const chess::Board& board, const chess::Move& move, const int Threshold);
 
 #endif

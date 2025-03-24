@@ -3,7 +3,7 @@
 #include "TT.h"
 
 void Lumina::ClearTT(){
-    TT.ClearTT();
+    TranspositionTable.ClearTT();
 }
 
 void Lumina::ClearKMT(){

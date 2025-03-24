@@ -8,7 +8,7 @@
 using namespace chess;
 using namespace std;
 
-int Evaluation(const Board& board, int Ply);
+int Evaluation(const Board& board);
 
 #endif
 

@@ -2,7 +2,6 @@
 #define TT_H
 
 #include "..\ChessLib\chess-library\include\chess.hpp"
-#include "../Lumina.h"
 
 #include <cstdlib>
 #include <vector>
@@ -30,7 +29,7 @@ struct TT{
         std::srand(457345);
     }
     
-    unordered_map<uint64_t, TTEntry> TTable;
+    std::unordered_map<uint64_t, TTEntry> TTable;
 
     void storeTTEntry(const uint64_t key, int value, int depth, int nodeType, chess::Move bestMove) {
         auto it = TTable.find(key);

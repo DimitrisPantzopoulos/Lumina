@@ -18,12 +18,12 @@ class Lumina {
     private:
         std::atomic<bool> CanSearch {true};
         
-        KMT KillerMoveTable;
-        TT TT;
+        KMT KillerMoveTable  = KMT();
+        TT TranspositionTable = TT();
         
     public:
-        Movelist OrderMoves   (chess::Board& board, chess::Move& HashMove, const int Ply);
-        Movelist OrderCaptures(Board& board, Move& HashMove);
+        Movelist OrderMoves   (const chess::Board& board, const chess::Move& HashMove, const int Ply);
+        Movelist OrderCaptures(const Board& board, const Move& HashMove);
 
         Move Think(Board& board, int Milliseconds);
         int  Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, int beta, int Extensions);

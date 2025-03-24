@@ -1,5 +1,5 @@
 #include "..\ChessLib\chess-library\include\chess.hpp"
-#include "HelperFunctions.h"
+#include "..\Evaluation\EvalHelp.h"
 
 //|--------------------------------------------------------------------------------------------------|
 //  STATIC EXCHANGE EVALUATION WAS MADE BY RAFID-DEV FOR RICE, WHICH IS LISCENCED UNDER THE GNU GPL-3.0
@@ -13,7 +13,7 @@ bool SEE(const chess::Board& board, const chess::Move& move, const int Threshold
 
     chess::PieceType TargetType = board.at(Target).type();
 
-    int value = PiecesValue(TargetType); // - Threshold;
+    int value = PiecesValue(TargetType) - Threshold;
 
     if(value < 0){
         return false;

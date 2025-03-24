@@ -10,8 +10,8 @@
 using namespace std;
 
 Lumina bot;
-Trie book;
-Board board;
+Trie   book;
+Board  board;
 string FEN = board.getFen();
 
 void FindBestMove(vector<string>& sequence, int Milliseconds) {
@@ -22,7 +22,7 @@ void FindBestMove(vector<string>& sequence, int Milliseconds) {
 
 void HandleUCIStart(){
     cout << "id name Lumina" << endl;
-    cout << "id author Lumina" << endl;
+    cout << "id author Dimitris Pantzopoulos" << endl;
     cout << "option name Threads type spin default 2 min 2 max 2" << endl;
     cout << "option name Hash type spin default 64 min 64 max 64" << endl;
     cout << "uciok" << endl;

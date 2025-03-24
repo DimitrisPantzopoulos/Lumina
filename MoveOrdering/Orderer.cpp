@@ -1,7 +1,7 @@
 #include "..\ChessLib\chess-library\include\chess.hpp"
 #include "..\Helper\SEE.h"
 #include "..\Lumina.h"
-#include "..\Helper\HelperFunctions.h"
+#include "..\Evaluation\EvalHelp.h"
 
 #include <algorithm>
 #include <vector>
@@ -24,11 +24,11 @@ bool compareMoves(const ScoredMove &a, const ScoredMove &b) {
     return a.score > b.score;
 }
 
-chess::Movelist Lumina::OrderMoves(chess::Board& board, chess::Move& HashMove, const int Ply)
+chess::Movelist Lumina::OrderMoves(const chess::Board& board, const chess::Move& HashMove, const int Ply)
 {
     chess::Movelist KillerMoves = KillerMoveTable.getKillerMoves(Ply);
 
-    chess::Color OppColor = board.sideToMove() == chess::Color::WHITE ? chess::Color::BLACK : chess::Color::WHITE;
+    chess::Color OppColor = ~board.sideToMove();
 
     chess::Movelist Moves;
     chess::movegen::legalmoves(Moves, board);
@@ -65,10 +65,10 @@ chess::Movelist Lumina::OrderMoves(chess::Board& board, chess::Move& HashMove, c
         if(Target != chess::Piece::NONE)
         {
             // MVV-LVA + SEE
-            Score += SEE(board, move, 0) ? CAPTURE_SCORE + (VictimScore - AttackerScore) : (VictimScore - AttackerScore);
+            Score += SEE(board, move, 150) ? CAPTURE_SCORE + (VictimScore - AttackerScore) : (VictimScore - AttackerScore);
         }
 
-        // // Promotions are likely to be good
+        // Promotions are likely to be good
         else if(move.typeOf() == chess::Move::PROMOTION){
             chess::PieceType PromotionType = move.promotionType();
             Score += PiecesValue(PromotionType);
@@ -92,7 +92,7 @@ chess::Movelist Lumina::OrderMoves(chess::Board& board, chess::Move& HashMove, c
     return SortedMoves;
 }
 
-chess::Movelist Lumina::OrderCaptures(chess::Board& board, chess::Move& HashMove)
+chess::Movelist Lumina::OrderCaptures(const chess::Board& board, const chess::Move& HashMove)
 {
     chess::Movelist Moves;
     chess::movegen::legalmoves<chess::movegen::MoveGenType::CAPTURE>(Moves, board);
@@ -122,7 +122,7 @@ chess::Movelist Lumina::OrderCaptures(chess::Board& board, chess::Move& HashMove
         }
 
         // MVV-LVA + SEE
-        Score += SEE(board, move, 0) ? CAPTURE_SCORE + (VictimScore - AttackerScore) : (VictimScore - AttackerScore);
+        Score += SEE(board, move, 150) ? CAPTURE_SCORE + (VictimScore - AttackerScore) : (VictimScore - AttackerScore);
         
         if (Score >= 0){
             ScoredMoves.push_back({move, Score});

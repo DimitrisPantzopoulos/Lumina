@@ -1,4 +1,5 @@
 #include "..\ChessLib\chess-library\include\chess.hpp"
+#include "..\PrecomputedValues\Precomputed.h"
 #include "..\Helper\HelperFunctions.h"
 #include "..\PST\PST.h"
 
@@ -6,20 +7,7 @@
 #include "Eval.h"
 #include <map>
 
-#define ImmediateMateScore 999999
-
-#define BISHOPPAIR_MG 154
-#define BISHOPPAIR_EG 144
-
-int Evaluation(const chess::Board& board, int Ply){
-    chess::GameResult State = board.isGameOver().second;
-
-    if(State != chess::GameResult::NONE){
-        if(State == chess::GameResult::WIN)      {return  (ImmediateMateScore - Ply);}
-        else if(State == chess::GameResult::LOSE){return -(ImmediateMateScore - Ply);}
-        else if(State == chess::GameResult::DRAW){return 0;}
-    }
-
+int Evaluation(const chess::Board& board){
     int Perspective = board.sideToMove() == chess::Color::WHITE ? 1 : -1;
 
     //Get both pawn bitboards which is used in the Bishop Evaluation and the squares which the pawns control because that is used in 
@@ -51,9 +39,11 @@ int Evaluation(const chess::Board& board, int Ply){
 
     // Calculate the weight for endgame influence
     // Get the Weight form the opposition's side to know when to get aggresive
-    // TODO: WE CAN PRECOMPUTE THIS ASWELL
-    float WEndgameWeight = static_cast<float>(WhiteBitboard.count()) / 32.0f;
-    float BEndgameWeight = static_cast<float>(BlackBitboard.count()) / 32.0f;
+    int WhitePieceCount  = WhiteBitboard.count();
+    int BlackPieceCount  = BlackBitboard.count();
+
+    float WEndgameWeight = CalculateEndgameWeights(WhitePieceCount);
+    float BEndgameWeight = CalculateEndgameWeights(BlackPieceCount);
 
     chess::Square WKsq = board.kingSq(chess::Color::WHITE);
     chess::Square BKsq = board.kingSq(chess::Color::BLACK);
@@ -115,8 +105,8 @@ int Evaluation(const chess::Board& board, int Ply){
         Indexes &= Indexes - 1;
     }
 
-    WhiteScore += WhiteBishops > 1 ? TaperedEvaluation(BEndgameWeight, BISHOPPAIR_MG, BISHOPPAIR_EG) : 0;
-    BlackScore += BlackBishops > 1 ? TaperedEvaluation(WEndgameWeight, BISHOPPAIR_MG, BISHOPPAIR_EG) : 0;
+    WhiteScore += WhiteBishops > 1 ? PrecomputedBishopValues(BlackPieceCount) : 0;
+    BlackScore += BlackBishops > 1 ? PrecomputedBishopValues(WhitePieceCount) : 0;
 
     WhiteScore += SafetyScore(WKsq, CombinedBitboard, WPawns, BEndgameWeight, true);
     BlackScore += SafetyScore(BKsq, CombinedBitboard, BPawns, WEndgameWeight, false);

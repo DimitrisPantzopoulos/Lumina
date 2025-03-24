@@ -8,7 +8,7 @@
 using namespace chess;
 using namespace std;
 
-static const array<int, 64> mg_pawn_table = {
+static const std::array<int, 64> mg_pawn_table = {
     0, 0, 0, 0, 0, 0, 0, 0,
     -31, -17, -8, -28, -36, -14, -27, -38,
     -42, -20, -30, -15, -16, -34, -31, -49,
@@ -19,7 +19,7 @@ static const array<int, 64> mg_pawn_table = {
     0, 0, 0, 0, 0, 0, 0, 0
 };
 
-static const array<int, 64> eg_pawn_table = {
+static const std::array<int, 64> eg_pawn_table = {
     0, 0, 0, 0, 0, 0, 0, 0,
     -11, 3, 12, -8, -16, 6, -7, -18,
     -2, 20, 0, 5, 4, -4, 9, -9,
@@ -96,7 +96,7 @@ static const array<int, 64> eg_king_table = {
     -302, -104, -58, -47, -46, -97, -131, -282
 };
 
-int PST(const int& PieceType, const bool PieceColor, int SquareIndex, float EndgameWeight){
+int PST(const int& PieceType, const bool PieceColor, int SquareIndex, const float EndgameWeight){
     SquareIndex = PieceColor ? SquareIndex : 63 - SquareIndex;
 
     switch (static_cast<int>(PieceType)) {

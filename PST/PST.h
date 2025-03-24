@@ -8,6 +8,6 @@
 using namespace chess;
 using namespace std;
 
-int PST(const int& PieceType, const bool PieceColor, int SquareIndex, float EndgameWeight);
+int PST(const int& PieceType, const bool PieceColor, int SquareIndex, const float EndgameWeight);
 
 #endif

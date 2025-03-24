@@ -29,23 +29,11 @@
     int DEBUG_QSEARCH_NODES = 0;
 #endif
 
+#define ImmediateMateScore -999999
+
 void Timer(int Milliseconds, std::atomic<bool>& CanSearch) {
     std::this_thread::sleep_for(std::chrono::milliseconds(Milliseconds));
     CanSearch = false;
-}
-
-int CalculateExtension(chess::Board& board, int &Extensions, const chess::Move& move) {
-    int Extension = 0;
-
-    chess::PieceType Type = board.at(move.from()).type();
-    chess::Rank MoveRank = move.to().rank();
-
-    if (Extensions < 16) {
-        Extension += board.inCheck() ? 1 : 0;
-        Extension += Type == chess::PieceType::PAWN && (MoveRank == chess::Rank::RANK_2 || MoveRank == chess::Rank::RANK_7);
-    }
-
-    return Extension;
 }
 
 chess::Move Lumina::Think(Board& board, int Milliseconds) {
@@ -125,25 +113,33 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
     if (!CanSearch || board.isRepetition(1)) { return SEARCH_CANCELLED; }
     
     chess::Move BestMove = chess::Move::NO_MOVE;
-    uint64_t key = board.zobrist();
+    uint64_t key = board.hash();
     TTEntry ttEntry;
+
     int ttype = UPPERBOUND;
 
-    if (TT.retrieveTTEntry(key, ttEntry, PlyRemaining)) {
-        if      (ttEntry.nodeType == UPPERBOUND && ttEntry.value <= alpha){ return ttEntry.value; }
-        else if (ttEntry.nodeType == EXACT)                               { return ttEntry.value; }
-        else if (ttEntry.nodeType == LOWERBOUND && ttEntry.value >= beta) { return ttEntry.value; }
+    if (TranspositionTable.retrieveTTEntry(key, ttEntry, PlyRemaining)) {
+        int NodeType  = ttEntry.nodeType;
+        int NodeValue = ttEntry.value;
+
+        if      (NodeType == UPPERBOUND && NodeValue <= alpha) { return NodeValue; }
+        else if (NodeType == EXACT)                            { return NodeValue; }
+        else if (NodeType == LOWERBOUND && NodeValue >= beta)  { return NodeValue; }
 
         BestMove = ttEntry.bestMove;
     }
 
-    chess::GameResult State = board.isGameOver().second;
-
-    if (PlyRemaining == 0 || State != GameResult::NONE) {
+    if (PlyRemaining == 0) {
         return QSearch(board, alpha, beta, Ply);
     }
 
     chess::Movelist LegalMoves = OrderMoves(board, BestMove, Ply);
+
+    // CHECK TO SEE IF THE GAME IS OVER
+    if (LegalMoves.empty()){
+        if (board.inCheck()){ return ImmediateMateScore + Ply; }
+        else                { return 0; }
+    }
 
     for (int i=0; i<LegalMoves.size(); i++) {
         chess::Move move = LegalMoves[i];
@@ -155,7 +151,7 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
         int eval = 0;
 
         if (i >= 3 && Extension == 0 && PlyRemaining >= 3 && !board.isCapture(move)) {
-            eval = -Search(board, Ply+1, PlyRemaining - ReduceDepth, -alpha-1, -alpha, Extensions);
+            eval = -Search(board, Ply + 1, PlyRemaining - ReduceDepth, -alpha-1, -alpha, Extensions);
             needsFullSearch = eval > alpha;
         }
 
@@ -168,7 +164,7 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
         if (!CanSearch) { return SEARCH_CANCELLED; }
 
         if (eval >= beta) {
-            TT.storeTTEntry(key, beta, PlyRemaining, LOWERBOUND, move);
+            TranspositionTable.storeTTEntry(key, beta, PlyRemaining, LOWERBOUND, move);
 
             if (!board.isCapture(move) && !(move.typeOf() == chess::Move::PROMOTION)) { KillerMoveTable.addKillerMoves(move, eval, Ply); }
 
@@ -182,7 +178,7 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
         }
     }
 
-    TT.storeTTEntry(key, alpha, PlyRemaining, ttype, BestMove);
+    TranspositionTable.storeTTEntry(key, alpha, PlyRemaining, ttype, BestMove);
     return alpha;
 }
 
@@ -194,19 +190,22 @@ int Lumina::QSearch(chess::Board& board, int alpha, int beta, int Ply) {
     if (!CanSearch) { return SEARCH_CANCELLED; }
 
     chess::Move BestMove = chess::Move::NO_MOVE;
-    uint64_t key = board.zobrist();
+    uint64_t key = board.hash();
     int ttype = UPPERBOUND;
     TTEntry ttEntry;
 
-    if (TT.retrieveTTEntry(key, ttEntry, QSEARCHDEPTH)) {
-        if      (ttEntry.nodeType == UPPERBOUND && ttEntry.value <= alpha){ return ttEntry.value; }
-        else if (ttEntry.nodeType == EXACT)                               { return ttEntry.value; }
-        else if (ttEntry.nodeType == LOWERBOUND && ttEntry.value >= beta) { return ttEntry.value; }
+    if (TranspositionTable.retrieveTTEntry(key, ttEntry, QSEARCHDEPTH)) {
+        int NodeType  = ttEntry.nodeType;
+        int NodeValue = ttEntry.value;
+
+        if      (NodeType == UPPERBOUND && NodeValue <= alpha) { return NodeValue; }
+        else if (NodeType == EXACT)                            { return NodeValue; }
+        else if (NodeType == LOWERBOUND && NodeValue >= beta)  { return NodeValue; }
 
         BestMove = ttEntry.bestMove;
     }
 
-    int eval = Evaluation(board, Ply);
+    int eval = Evaluation(board);
 
     if (eval >= beta) { return beta; }
     if (eval > alpha) { alpha = eval;}
@@ -221,7 +220,7 @@ int Lumina::QSearch(chess::Board& board, int alpha, int beta, int Ply) {
         if (!CanSearch) { return SEARCH_CANCELLED; }
 
         if (MoveEval >= beta) {
-            TT.storeTTEntry(key, beta, QSEARCHDEPTH, LOWERBOUND, move);
+            TranspositionTable.storeTTEntry(key, beta, QSEARCHDEPTH, LOWERBOUND, move);
             return beta;
         }
 
@@ -232,6 +231,6 @@ int Lumina::QSearch(chess::Board& board, int alpha, int beta, int Ply) {
         }
     }
 
-    TT.storeTTEntry(key, alpha, QSEARCHDEPTH, ttype, BestMove);
+    TranspositionTable.storeTTEntry(key, alpha, QSEARCHDEPTH, ttype, BestMove);
     return alpha;
 }
