@@ -10,8 +10,8 @@
 int Evaluation(const chess::Board& board){
     int Perspective = board.sideToMove() == chess::Color::WHITE ? 1 : -1;
 
-    //Get both pawn bitboards which is used in the Bishop Evaluation and the squares which the pawns control because that is used in 
-    //Space and knight evaluation
+    // Get both pawn bitboards which is used in the Bishop Evaluation and the squares which the pawns control because that is used in 
+    // Space and knight evaluation
     chess::Bitboard WPawns = board.pieces(chess::PieceType::PAWN, chess::Color::WHITE);
     chess::Bitboard BPawns = board.pieces(chess::PieceType::PAWN, chess::Color::BLACK);
     
@@ -25,11 +25,11 @@ int Evaluation(const chess::Board& board){
 
     chess::Bitboard CombinedBitboard = WhiteBitboard | BlackBitboard;
 
-    //Now we get the indexes for all the pieces on the board so we can just check them and not have to loop over the entire board
-    //Which is probably twice as efficient because we at most have to check 32 squares and not the entire 64 squares on the board
-    //Also this function gets more efficient as the game progresses because less pieces = less indexes to check instead of having 
-    //to check a constant 64 squares
-    uint64_t Indexes = CombinedBitboard.getBits();
+    // Now we get the indexes for all the pieces on the board so we can just check them and not have to loop over the entire board
+    // Which is probably twice as efficient because we at most have to check 32 squares and not the entire 64 squares on the board
+    // Also this function gets more efficient as the game progresses because less pieces = less indexes to check instead of having 
+    // to check a constant 64 squares
+    chess::Bitboard Indexes = CombinedBitboard;
 
     int WhiteScore = 0;
     int BlackScore = 0;
@@ -48,63 +48,47 @@ int Evaluation(const chess::Board& board){
     chess::Square WKsq = board.kingSq(chess::Color::WHITE);
     chess::Square BKsq = board.kingSq(chess::Color::BLACK);
 
-    while (Indexes) {
-        // Get the Index
-        int Index = __builtin_ctzll(Indexes);
-
+    while (Indexes != 0) {
+        int Index = Indexes.pop();
         chess::Square Sq = chess::Square(Index);
-
-        int  PieceType = static_cast<int>(board.at(Sq).type());
-        bool Color     = board.at(Sq).color() == chess::Color::WHITE;
-
-        if(Color){
-            WhiteScore += PiecesValueEval(PieceType, BEndgameWeight) + PST(PieceType, true, Index, BEndgameWeight);
-
-            switch (PieceType){
-                case 0: // PAWN
-                    WhiteScore += EvaluatePawn(Sq, BPawns, WPawns, BEndgameWeight, true);
-                    break;
-                case 1: // KNIGHT
-                    WhiteScore += EvaluateKnight(Sq, BPawns, WPawns, BPawnsSq, BEndgameWeight, true);
-                    break;
-                case 2: // BISHOP
-                    WhiteScore += EvaluateBishop(Sq, CombinedBitboard, BPawns, WPawns, BPawnsSq, BEndgameWeight, true);
+        chess::Piece piece = board.at(Index);
+        
+        int PieceType = static_cast<int>(piece.type());
+        bool Color = piece.color() == chess::Color::WHITE;
+    
+        float EndgameWeight     = Color ? BEndgameWeight : WEndgameWeight;
+        float OppEndgameWeight  = Color ? WEndgameWeight : BEndgameWeight;
+    
+        chess::Bitboard& OurPawns       = Color ? WPawns : BPawns;
+        chess::Bitboard& TheirPawns     = Color ? BPawns : WPawns;
+        chess::Bitboard& TheirPawnSq    = Color ? BPawnsSq : WPawnsSq;
+    
+        chess::Color OpponentColor      = Color ? chess::Color::BLACK : chess::Color::WHITE;
+    
+        int& Score = Color ? WhiteScore : BlackScore;
+    
+        Score += PiecesValueEval(PieceType, EndgameWeight) + PST(PieceType, Color, Index, EndgameWeight);
+    
+        switch (PieceType) {
+            case 0: // PAWN
+                Score += EvaluatePawn(Sq, TheirPawns, OurPawns, EndgameWeight, Color);
+                break;
+            case 1: // KNIGHT
+                Score += EvaluateKnight(Sq, TheirPawns, OurPawns, TheirPawnSq, EndgameWeight, Color);
+                break;
+            case 2: // BISHOP
+                Score += EvaluateBishop(Sq, CombinedBitboard, TheirPawns, OurPawns, TheirPawnSq, EndgameWeight, Color);
+                if (Color)
                     WhiteBishops++;
-                    break;
-                case 3: // ROOKS
-                    WhiteScore += EvaluateRooks(Sq, BPawns, WPawns, CombinedBitboard, BEndgameWeight, true);
-                    break;
-                case 4:
-                    WhiteScore += EvaluateQueen(Sq, board, BPawns, CombinedBitboard, chess::Color::BLACK, BEndgameWeight);
-                    break;
-            }
-
-        }else{
-            BlackScore += PiecesValueEval(PieceType, WEndgameWeight) + PST(PieceType, false, Index, WEndgameWeight);
-
-            switch (PieceType){
-                case 0: // PAWN
-                    BlackScore += EvaluatePawn(Sq, WPawns, BPawns, WEndgameWeight, false);
-                    break;
-                case 1: // KNIGHT
-                    BlackScore += EvaluateKnight(Sq, WPawns, BPawns, WPawnsSq, WEndgameWeight, false);
-                    break;
-                case 2: // BISHOP
-                    BlackScore += EvaluateBishop(Sq, CombinedBitboard, WPawns, BPawns, WPawnsSq, WEndgameWeight, false);
+                else
                     BlackBishops++;
-                    break;
-                case 3: // ROOK 
-                    BlackScore += EvaluateRooks(Sq, WPawns, BPawns, CombinedBitboard, WEndgameWeight, false);
-                    break;
-                case 4: // QUEEN
-                    BlackScore += EvaluateQueen(Sq, board, WPawns, CombinedBitboard, chess::Color::WHITE, WEndgameWeight);
-                    break;
-            }
+                break;
+            case 3: // ROOK
+                Score += EvaluateRooks(Sq, TheirPawns, OurPawns, CombinedBitboard, EndgameWeight, Color);
+                break;
         }
-
-        Indexes &= Indexes - 1;
     }
-
+    
     WhiteScore += WhiteBishops > 1 ? PrecomputedBishopValues(BlackPieceCount) : 0;
     BlackScore += BlackBishops > 1 ? PrecomputedBishopValues(WhitePieceCount) : 0;
 

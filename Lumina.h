@@ -18,7 +18,7 @@ class Lumina {
     private:
         std::atomic<bool> CanSearch {true};
         
-        KMT KillerMoveTable  = KMT();
+        KMT KillerMoveTable   = KMT();
         TT TranspositionTable = TT();
         
     public:

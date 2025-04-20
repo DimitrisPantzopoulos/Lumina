@@ -117,7 +117,7 @@ struct KMT{
     std::vector<KMEntry> KillerMoveTable;
 
     void addKillerMoves(const chess::Move& CandidateKillerMove, const int CandidateScore, const int Ply){
-        //Ensure that an entry exists
+        // Ensure that an entry exists
         if(KillerMoveTable.size() <= Ply){
             KillerMoveTable.resize(Ply + 1);
         }

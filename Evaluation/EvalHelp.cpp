@@ -202,78 +202,44 @@ int EvaluateRooks(const chess::Square &sq, const chess::Bitboard& EnemyPawns, co
 }
 
 int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ, const chess::Bitboard& EnemyPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& EnemyPawnsSq, float weight, bool isWhite){
-    static const chess::Bitboard LIGHT_SQUARES = chess::Bitboard(0x55AA55AA55AA55AAULL);
-    static const chess::Bitboard DARK_SQUARES  = chess::Bitboard(0xAA55AA55AA55AA55ULL);
+    constexpr uint64_t LIGHT_SQUARES = 0x55AA55AA55AA55AAULL;
+    constexpr uint64_t DARK_SQUARES  = 0xAA55AA55AA55AA55ULL;
+
+    int Score = 0;
+
+    int rank = sq.rank();
+    int idx  = sq.index();
 
     chess::Bitboard BishopBitBoard = chess::attacks::bishop(sq, occ);
 
-    int Score = 0;
-    int rank = sq.rank();
-
     // Create a combined mask which has both friendly and opposition pawns
-    chess::Bitboard CombinedMask = FriendPawns | EnemyPawns;
+    chess::Bitboard CombinedPawnMask = FriendPawns | EnemyPawns;
 
     // Create a forwards mask to delete all behind moves
-    uint64_t BForward = ComputeBForward(rank, isWhite);
+    chess::Bitboard ForwardMask = ComputeBForward(rank, isWhite);
 
     // Check if bishop controls a open diagonal
-    // The reason for < 2 is because the bishop can only control max 2 open diagonals if i didnt do this
-    // it could control a open diagonal and not be rewarded for it
-    if((CombinedMask & BishopBitBoard).count() < 2){
+    if((EnemyPawns & BishopBitBoard & ForwardMask) == 0){
         Score += TaperedEvaluation(weight, BISHOPOPENFILE_MG, BISHOPOPENFILE_EG);
     }
 
     // Detect Bad Bishop
-    int NoOfFixedPawns;
-    int NoOfPawns;
+    bool isLight = ((idx & 1) ^ (idx >> 3 & 1)) == 0;
+    uint64_t colorMask = isLight ? LIGHT_SQUARES : DARK_SQUARES;
+    
+    chess::Bitboard ForwardColoredPawns = FriendPawns & ForwardMask & colorMask;
 
-    // Is bishop light or dark squared?
-    if((chess::Bitboard(1ULL << sq.index()) & LIGHT_SQUARES) != 0){
-        // If its a light squared bishop
+    chess::Bitboard MovablePawns = isWhite
+        ? ((ForwardColoredPawns << 8) & ~EnemyPawns)
+        : ((ForwardColoredPawns >> 8) & ~EnemyPawns);
 
-        // Find how many total pawns there are blocking the bishop
-        chess::Bitboard WhiteSquaredPawns = (LIGHT_SQUARES & FriendPawns) & BForward;
-        NoOfPawns = WhiteSquaredPawns.count();
-
-        // Find out how many Fixed pawns Pawns that dont move are in the position
-        if(isWhite){
-            NoOfFixedPawns = ((WhiteSquaredPawns << 8) & EnemyPawns).count();
-        }else{
-            NoOfFixedPawns = ((WhiteSquaredPawns >> 8) & EnemyPawns).count();
-        }
-    }else{
-        // Find how many total pawns there are blocking the bishop
-        chess::Bitboard BlackSquaredPawns = (DARK_SQUARES & FriendPawns) & BForward;
-        NoOfPawns = BlackSquaredPawns.count();
-
-        // Find out how many Fixed pawns Pawns that dont move are in the position
-        if(isWhite){
-            NoOfFixedPawns = ((BlackSquaredPawns << 8) & EnemyPawns).count();
-        }else{
-            NoOfFixedPawns = ((BlackSquaredPawns >> 8) & EnemyPawns).count();
-        }
-    }
+    int NoOfPawns      = ForwardColoredPawns.count();
+    int NonFixedPawns  = MovablePawns.count();
+    int NoOfFixedPawns = NoOfPawns - NonFixedPawns;
 
     // Fixed Pawns are harder to get rid of
     Score += NoOfFixedPawns * TaperedEvaluation(weight, BISHOPFIXEDPAWNS_MG, BISHOPFIXEDPAWNS_EG);
-
-    Score += (BishopBitBoard & ~EnemyPawnsSq).count() * TaperedEvaluation(weight, BISHOPMOBILITY_MG, BISHOPMOBILITY_EG);
-
-    return Score;
-}
-
-int EvaluateQueen(const chess::Square &sq, const chess::Board& board, const chess::Bitboard& EnemyPawns, const chess::Bitboard occ, const chess::Color EnemyColor, float weight){
-    static constexpr chess::Bitboard Msquares = chess::Bitboard(0x1818000000ULL);
-
-    // Count mobility
-    chess::Bitboard QueenMobility = chess::attacks::queen(sq, occ);
-    //Score += QueenMobility.count() * TaperedEvaluation(weight, QUEENMOBILITY_MG, QUEENMOBILITY_EG);
-
-    // // Pressure on Middle Squares
-    int Score = (QueenMobility & Msquares).count() * TaperedEvaluation(weight, QUEENMIDDLESQUAREPRESSURE_MG, QUEENMIDDLESQUAREPRESSURE_EG);
-
-    // Calculate distance to king to see how big of a threat it is to king safety
-    // Score += 1.0f / (chess::Square::distance(sq, board.kingSq(EnemyColor))) * TaperedEvaluation(weight, QUEENDISTANCE_MG, QUEENDISTANCE_EG);
+    Score += (BishopBitBoard ^ EnemyPawnsSq).count() * TaperedEvaluation(weight, BISHOPMOBILITY_MG, BISHOPMOBILITY_EG);
 
     return Score;
 }

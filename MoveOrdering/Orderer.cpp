@@ -55,9 +55,9 @@ chess::Movelist Lumina::OrderMoves(const chess::Board& board, const chess::Move&
 
         if(move == HashMove){
             Score += HASH_SCORE;
-        }else if(move == KillerMoves[0]){
+        }else if(move == KillerMoves[0]) {
             Score += FIRST_KILLER_SCORE;
-        }else if(move == KillerMoves[1]){
+        }else if(move == KillerMoves[1]) {
             Score += SECOND_KILLER_SCORE;
         }
 

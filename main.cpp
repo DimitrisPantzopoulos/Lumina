@@ -61,7 +61,7 @@ void HandleUCIGo(string command, vector<string>& sequence, bool& opening){
     //The commented code is an attempt to dynamically find how long we should search based on how much time is left, I've left it out because i think to improve the
     //search function it would be better to have this variable be the same for testing purposes. Also this has a wierd bug which causes the program to disconnect from 
     //fastchess my guess is because its trying to search for a few milliseconds it cant do it fast enough so it just returns a null move or smth.
-    int TimeToSearch = 1000; //(board.sideToMove() == Color::WHITE ? std::stoi(TimeControl[2]) : std::stoi(TimeControl[4])) / (AvgMovesaGame - sequence.size() + 1);   
+    int TimeToSearch = 100; //(board.sideToMove() == Color::WHITE ? std::stoi(TimeControl[2]) : std::stoi(TimeControl[4])) / (AvgMovesaGame - sequence.size() + 1);   
 
     if (!opening) {
         FindBestMove(sequence, TimeToSearch);
