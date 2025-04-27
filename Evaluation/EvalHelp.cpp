@@ -6,6 +6,7 @@
 #include <cmath>
 #include <map>
 
+<<<<<<< Updated upstream
 constexpr int PAWN_VALUE_MG = 286;
 constexpr int PAWN_VALUE_EG = 319;
 
@@ -23,28 +24,43 @@ constexpr int QUEEN_VALUE_EG = 3151;
 
 constexpr int NOPAWNSHIELD_MG = 7;
 constexpr int NOPAWNSHIELD_EG = 15;
+=======
+// Structural Evaluation functions all O(1) parrallelised, bit-manipulation functions and are crazy fast on average 6x faster than traditional implementations
+// Not to mention how mnay bugs I squashed when making these its crazy
+void EvaluatePawns(
+    const chess::Bitboard& WhitePawns, const chess::Bitboard& BlackPawns, 
+    double& WhiteScore, double& BlackScore, const double Wweight, const double Bweight)
+{
+    constexpr uint64_t Msquares = 0x1818000000;
+    constexpr uint64_t NOT_HFILE = ~0x8080808080808080ULL;
+    constexpr uint64_t NOT_AFILE = ~0x0101010101010101ULL;
+>>>>>>> Stashed changes
 
-constexpr int VQUEENSCOREMG = -18;
-constexpr int VQUEENSCOREEG = -5;
+    uint64_t WhitePawnsMask = WhitePawns.getBits();
+    uint64_t BlackPawnsMask = BlackPawns.getBits();
 
-constexpr int ISOLATEDPAWN_MG = -19;
-constexpr int ISOLATEDPAWN_EG = -15;
+    uint64_t WDiagonalsNE = (WhitePawnsMask & NOT_HFILE) << 9;
+    uint64_t WDiagonalsNW = (WhitePawnsMask & NOT_AFILE) << 7;
 
-constexpr int DOUBLEDPAWN_MG = -40;
-constexpr int DOUBLEDPAWN_EG = -29;
+    uint64_t BDiagonalsNE = (BlackPawnsMask & NOT_AFILE) >> 9;
+    uint64_t BDiagonalsNW = (BlackPawnsMask & NOT_HFILE) >> 7;
 
-constexpr int CENTREPAWN_MG = -4;
-constexpr int CENTREPAWN_EG = -8;
+    uint64_t WhitePawnsPassedPawnMask = NorthFill(WDiagonalsNE | WhitePawnsMask | WDiagonalsNW);
+    uint64_t BlackPawnsPassedPawnMask = SouthFill(BDiagonalsNE | BlackPawnsMask | BDiagonalsNW);
 
-constexpr int PHALANXBONUS_MG = 2;
-constexpr int PHALANXBONUS_EG = 6;
+    // Find how many Passed Pawns each side has
+    WhiteScore += __builtin_popcountll(~BlackPawnsPassedPawnMask & WhitePawnsMask) * TaperedEvaluation(Wweight, PASSEDPAWN_MG, PASSEDPAWN_EG);
+    BlackScore += __builtin_popcountll(~WhitePawnsPassedPawnMask & BlackPawnsMask) * TaperedEvaluation(Bweight, PASSEDPAWN_MG, PASSEDPAWN_EG);
 
-constexpr int KNIGHTOUTPOST_MG = 82;
-constexpr int KNIGHTOUTPOST_EG = 71;
+    // Find out how many Doubled Pawns each side has
+    WhiteScore += __builtin_popcountll(SouthFill(WhitePawnsMask >> 8) & WhitePawnsMask) * TaperedEvaluation(Wweight, DOUBLEDPAWN_MG, DOUBLEDPAWN_EG);
+    BlackScore += __builtin_popcountll(NorthFill(BlackPawnsMask << 8) & BlackPawnsMask) * TaperedEvaluation(Bweight, DOUBLEDPAWN_MG, DOUBLEDPAWN_EG);
 
-constexpr int KNIGHTMOBILITY_MG = 35;
-constexpr int KNIGHTMOBILITY_EG = 29;
+    // Find How many Isolated Pawns there are on each file for each side
+    uint64_t WAdjacent = WDiagonalsNE | WDiagonalsNW;
+    uint64_t BAdjacent = BDiagonalsNE | BDiagonalsNW;
 
+<<<<<<< Updated upstream
 constexpr int ROOKOPENFILE_MG = 43;
 constexpr int ROOKOPENFILE_EG = 64;
 
@@ -104,22 +120,38 @@ int SafetyScore(const chess::Square &KSq, const chess::Bitboard& occ ,const ches
     uint64_t combinedMask = (fileMask | leftFileMask | rightFileMask);
 
     int SafetyScore = 0;
+=======
+    uint64_t WhiteAdjacentFileMasks = NorthFill(WAdjacent) | SouthFill(WAdjacent);
+    uint64_t BlackAdjacentFileMasks = NorthFill(BAdjacent) | SouthFill(BAdjacent);
+>>>>>>> Stashed changes
     
-    // See if the king has a pawn shield
-    SafetyScore += (FriendPawns & combinedMask).count() * TaperedEvaluation(weight, NOPAWNSHIELD_MG, NOPAWNSHIELD_EG);
+    WhiteScore += __builtin_popcountll(~WhiteAdjacentFileMasks & WhitePawnsMask) * TaperedEvaluation(Wweight, ISOLATEDPAWN_MG, ISOLATEDPAWN_EG);
+    BlackScore += __builtin_popcountll(~BlackAdjacentFileMasks & BlackPawnsMask) * TaperedEvaluation(Bweight, ISOLATEDPAWN_MG, ISOLATEDPAWN_EG);
 
-    // Virtual Queen Score  
-    SafetyScore += chess::attacks::queen(KSq, occ).count() * TaperedEvaluation(weight, VQUEENSCOREMG, VQUEENSCOREEG);
-
-    return SafetyScore;
+    // Find out how many pawns are in the center
+    WhiteScore += __builtin_popcountll(WhitePawnsMask & Msquares) * TaperedEvaluation(Wweight, CENTREPAWN_MG, CENTREPAWN_EG);
+    BlackScore += __builtin_popcountll(BlackPawnsMask & Msquares) * TaperedEvaluation(Bweight, CENTREPAWN_MG, CENTREPAWN_EG);
 }
 
+<<<<<<< Updated upstream
 int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &EnemyPawns, const chess::Bitboard &FriendPawns, float weight, bool isWhite) {
     constexpr static std::array<int, 7> PawnBonuses =   {0, 94, 202, 128, 60, 2, 8};
     constexpr static std::array<int, 7> PawnBonusesEG = {0, 85, 187, 111, 54, -1, 7};
+=======
+void EvaluateKnights(
+    const chess::Bitboard& WhiteKnights,            const chess::Bitboard& BlackKnights,
+    const chess::Bitboard& WhitePawns,              const chess::Bitboard& BlackPawns,
+    const chess::Bitboard& WhitePawnsAttackSquares, const chess::Bitboard& BlackPawnsAttackSquares,
+    double& WhiteScore, double& BlackScore, const double Wweight, const double Bweight)
+{
+    constexpr uint64_t NOT_HFILE = ~0x8080808080808080ULL;
+    constexpr uint64_t NOT_AFILE = ~0x0101010101010101ULL;
+>>>>>>> Stashed changes
 
-    static const uint64_t Msquares = 0x1818000000;
+    constexpr uint64_t BOTTOM_HALF = 0x00000000FFFFFFFFULL;
+    constexpr uint64_t TOP_HALF    = 0xFFFFFFFF00000000ULL;
 
+<<<<<<< Updated upstream
     int Score = 0;
     int rank = sq.rank();
     int file = sq.file();
@@ -168,12 +200,19 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &EnemyPawns, con
     if (((leftFileMask | rightFileMask) & FriendPawns) == 0) {
         Score += TaperedEvaluation(weight, DOUBLEDPAWN_MG, DOUBLEDPAWN_EG);
     }
-    
-    // Check if pawn is in the centre squares 
-    if((currentPawnPosition & Msquares) != 0){
-        Score += TaperedEvaluation(weight, CENTREPAWN_MG, CENTREPAWN_EG);
-    }
+=======
+    // Get Masks
+    uint64_t WhiteKnightsMask = WhiteKnights.getBits();
+    uint64_t BlackKnightsMask = BlackKnights.getBits();
 
+    uint64_t WhitePawnSupportSquares = WhitePawnsAttackSquares.getBits();
+    uint64_t BlackPawnSupportSquares = BlackPawnsAttackSquares.getBits();
+>>>>>>> Stashed changes
+    
+    uint64_t WhitePawnsMask = WhitePawns.getBits();
+    uint64_t BlackPawnsMask = BlackPawns.getBits();
+
+<<<<<<< Updated upstream
     // Check for Phalanx Pawns
     chess::Bitboard PawnRank(0xFFULL << (rank * 8));
     PawnRank &= leftFileMask | rightFileMask;
@@ -181,16 +220,38 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &EnemyPawns, con
     if((isWhite && rank != 2) || (!isWhite && rank != 7)){
         Score += (PawnRank & FriendPawns).count() * TaperedEvaluation(weight, PHALANXBONUS_MG, PHALANXBONUS_EG);
     }
+=======
+    // Direct forward fills
+    uint64_t WhitePawnsNorthFill = NorthFill(WhitePawnsMask);
+    uint64_t BlackPawnsSouthFill = SouthFill(BlackPawnsMask);
 
-    return Score;
+    // WHITE
+    uint64_t WhitePawnsNEFill = (WhitePawnsNorthFill & NOT_HFILE) << 9; // NE = up+right
+    uint64_t WhitePawnsNWFill = (WhitePawnsNorthFill & NOT_AFILE) << 7; // NW = up+left
+>>>>>>> Stashed changes
+
+    // BLACK
+    uint64_t BlackPawnsNEFill = (BlackPawnsSouthFill & NOT_AFILE) >> 7; // SE = down+right
+    uint64_t BlackPawnsNWFill = (BlackPawnsSouthFill & NOT_HFILE) >> 9; // SW = down+left
+
+    // Passed pawn masks
+    uint64_t WhiteAdjacent = WhitePawnsNEFill | WhitePawnsNWFill;
+    uint64_t BlackAdjacent = BlackPawnsNEFill | BlackPawnsNWFill;
+
+    // Calculate Outposts
+    WhiteScore += __builtin_popcountll((WhiteKnightsMask & WhitePawnSupportSquares & TOP_HALF) & ~BlackAdjacent) * TaperedEvaluation(Wweight, KNIGHTOUTPOST_MG, KNIGHTOUTPOST_EG);
+    BlackScore += __builtin_popcountll((BlackKnightsMask & BlackPawnSupportSquares & BOTTOM_HALF) & ~WhiteAdjacent) * TaperedEvaluation(Bweight, KNIGHTOUTPOST_MG, KNIGHTOUTPOST_EG);
 }
 
-int EvaluateKnight(const chess::Square &sq, const chess::Bitboard& EnemyPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& SCBEP, float weight, bool isWhite){
-    //We want Knights to be on outposts in the middle so they can control as many squares as possible
-    //and basically harrass the other side
-    int file = sq.file();
-    int rank = sq.rank();
+void EvaluateRooks(
+    const chess::Bitboard& WhiteRooks,              const chess::Bitboard& BlackRooks,
+    const chess::Bitboard& WhitePawns,              const chess::Bitboard& BlackPawns,
+    double& WhiteScore, double& BlackScore, const double Wweight, const double Bweight)
+{
+    constexpr uint64_t RANK_2 = 0x000000000000FF00ULL;
+    constexpr uint64_t RANK_7 = 0x00FF000000000000ULL;
 
+<<<<<<< Updated upstream
     //Get the bits behind one rank of the knight and in front of it
     uint64_t KForward;
     uint64_t KBackward;
@@ -208,25 +269,44 @@ int EvaluateKnight(const chess::Square &sq, const chess::Bitboard& EnemyPawns, c
     uint64_t rightFileMask = (file < 7) ? 0x0101010101010101ULL << (file + 1) : 0;
 
     uint64_t CombinedMask = leftFileMask | rightFileMask;
+=======
+    uint64_t WhitePawnsMask = WhitePawns.getBits();
+    uint64_t BlackPawnsMask = BlackPawns.getBits();
 
-    //Apply the forward mask to get the relevant bits in front and behind the knight which creates like an X Shape
-    uint64_t KnightBits = KForward & CombinedMask;
+    uint64_t WhiteRooksMask = WhiteRooks.getBits();
+    uint64_t BlackRooksMask = BlackRooks.getBits();
+>>>>>>> Stashed changes
 
-    int Score = 0;
+    // Find which rooks are on a open file
+    uint64_t CombinedPawnsMask = WhitePawnsMask | BlackPawnsMask;
 
+    // Open File and Semi-Open File
+    uint64_t WhitePawnSouthFill = SouthFill(WhitePawnsMask);
+    uint64_t BlackPawnSouthFill = SouthFill(BlackPawnsMask);
+
+<<<<<<< Updated upstream
     // See if a knight is on a outpost
     if (((KnightBits & EnemyPawns.getBits()) == 0) && ((KBackward & FriendPawns.getBits()) != 0)) {
         Score += TaperedEvaluation(weight, KNIGHTOUTPOST_MG, KNIGHTOUTPOST_EG);
     }
+=======
+    uint64_t WhitePawnNorthFill = NorthFill(WhitePawnsMask);
+    uint64_t BlackPawnNorthFill = NorthFill(BlackPawnsMask);
+>>>>>>> Stashed changes
 
-    // Check Knight mobility but disregard squares that pawns are on
-    chess::Bitboard KnightMoves = chess::attacks::knight(sq);
+    uint64_t WhitePawnColumnFills = WhitePawnNorthFill | WhitePawnSouthFill;
+    uint64_t BlackPawnColumnFills = BlackPawnNorthFill | BlackPawnSouthFill;
 
-    Score += (KnightMoves & ~SCBEP).count() * TaperedEvaluation(weight, KNIGHTMOBILITY_MG, KNIGHTMOBILITY_EG);
+    // Open File Heuristic
+    WhiteScore += __builtin_popcountll((WhiteRooksMask & ~WhitePawnColumnFills) & ~BlackPawnColumnFills) * TaperedEvaluation(Wweight, ROOKOPENFILE_MG, ROOKOPENFILE_EG);
+    BlackScore += __builtin_popcountll((BlackRooksMask & ~BlackPawnColumnFills) & ~WhitePawnColumnFills) * TaperedEvaluation(Bweight, ROOKOPENFILE_MG, ROOKOPENFILE_EG);
 
-    return Score;
+    // 2nd and 7th Rank Heuristic
+    WhiteScore += __builtin_popcountll(WhiteRooksMask & RANK_7) * TaperedEvaluation(Wweight, ROOKBACKRANK_MG, ROOKBACKRANK_EG);
+    BlackScore += __builtin_popcountll(BlackRooksMask & RANK_2) * TaperedEvaluation(Bweight, ROOKBACKRANK_MG, ROOKBACKRANK_EG);
 }
 
+<<<<<<< Updated upstream
 int EvaluateRooks(const chess::Square &sq, const chess::Bitboard& EnemyPawns, const chess::Bitboard& FriendPawns, const chess::Bitboard& occ, float weight, bool isWhite){
     int Score = 0;
 
@@ -337,6 +417,53 @@ int EvaluateQueen(const chess::Square &sq, const chess::Board& board, const ches
 
     // Calculate distance to king to see how big of a threat it is to king safety
     //Score += 1.0f / (chess::Square::distance(sq, board.kingSq(EnemyColor))) * TaperedEvaluation(weight, QUEENDISTANCE_MG, QUEENDISTANCE_EG);
+=======
+void EvaluateBishops(
+    const chess::Bitboard& WhiteBishops,            const chess::Bitboard& BlackBishops,
+    const chess::Bitboard& WhitePawns,              const chess::Bitboard& BlackPawns,
+    const chess::Bitboard& WhitePawnsAttackSquares, const chess::Bitboard& BlackPawnsAttackSquares,
+    double& WhiteScore, double& BlackScore, const double Wweight, const double Bweight)
+{
+    constexpr uint64_t LIGHT_SQUARES = 0x55AA55AA55AA55AAULL;
+    constexpr uint64_t DARK_SQUARES  = 0xAA55AA55AA55AA55ULL;
 
-    return Score;
+    uint64_t WhiteBishopsMask = WhiteBishops.getBits();
+    uint64_t BlackBishopsMask = BlackBishops.getBits();
+    
+    uint64_t WhitePawnsMask = WhitePawns.getBits();
+    uint64_t BlackPawnsMask = BlackPawns.getBits();
+
+    // Detect Bad Bishops
+    int WhiteLightBishops = __builtin_popcountll(WhiteBishopsMask & LIGHT_SQUARES);
+    int WhiteDarkBishops  = __builtin_popcountll(WhiteBishopsMask & DARK_SQUARES);
+
+    int BlackLightBishops = __builtin_popcountll(BlackBishopsMask & LIGHT_SQUARES);
+    int BlackDarkBishops  = __builtin_popcountll(BlackBishopsMask & DARK_SQUARES);
+
+    // Calculate Scores
+    uint64_t CombinedPawnMask = WhitePawnsMask | BlackPawnsMask;
+>>>>>>> Stashed changes
+
+    uint64_t FixedPawns    = ((WhitePawnsMask << 8) & BlackPawnsMask) | ((BlackPawnsMask >> 8) & WhitePawnsMask);
+    uint64_t NonFixedPawns = CombinedPawnMask & ~FixedPawns;
+
+    int LightFixedPawns    = __builtin_popcountll(FixedPawns & LIGHT_SQUARES);
+    int LightNonFixedPawns = __builtin_popcountll(NonFixedPawns & LIGHT_SQUARES);
+
+    int DarkFixedPawns    = __builtin_popcountll(FixedPawns & DARK_SQUARES);
+    int DarkNonFixedPawns = __builtin_popcountll(NonFixedPawns & DARK_SQUARES);
+
+    int WhiteFixedTapered = TaperedEvaluation(Wweight, BISHOPFIXEDPAWNS_MG, BISHOPFIXEDPAWNS_EG);
+    int BlackFixedTapered = TaperedEvaluation(Bweight, BISHOPFIXEDPAWNS_MG, BISHOPFIXEDPAWNS_EG);
+
+    int WhiteNonFixedTapered = TaperedEvaluation(Wweight, NONFIXEDPAWN_MG, NONFIXEDPAWN_EG);
+    int BlackNonFixedTapered = TaperedEvaluation(Bweight, NONFIXEDPAWN_MG, NONFIXEDPAWN_EG);
+
+    WhiteScore += WhiteLightBishops * (LightFixedPawns * WhiteFixedTapered + LightNonFixedPawns * WhiteNonFixedTapered);
+    WhiteScore += WhiteDarkBishops  * (DarkFixedPawns  * WhiteFixedTapered + DarkNonFixedPawns  * WhiteNonFixedTapered);
+    WhiteScore += ((WhiteLightBishops + WhiteDarkBishops) >= 2) * TaperedEvaluation(Wweight, TWOBISHOPS_MG, TWOBISHOPS_EG);
+
+    BlackScore += BlackLightBishops * (LightFixedPawns * BlackFixedTapered + LightNonFixedPawns * BlackNonFixedTapered);
+    BlackScore += BlackDarkBishops  * (DarkFixedPawns  * BlackFixedTapered + DarkNonFixedPawns  * BlackNonFixedTapered);
+    BlackScore += ((BlackLightBishops + BlackDarkBishops) >= 2) * TaperedEvaluation(Bweight, TWOBISHOPS_MG, TWOBISHOPS_EG);
 }

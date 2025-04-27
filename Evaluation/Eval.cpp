@@ -1,11 +1,11 @@
 #include "..\ChessLib\chess-library\include\chess.hpp"
 #include "..\Helper\HelperFunctions.h"
-#include "..\PST\PST.h"
 
 #include "EvalHelp.h"
 #include "Eval.h"
 #include <map>
 
+<<<<<<< Updated upstream
 #define ImmediateMateScore 999999
 
 #define BISHOPPAIR_MG 154
@@ -24,40 +24,80 @@ int Evaluation(const chess::Board& board, int Ply){
 
     //Get both pawn bitboards which is used in the Bishop Evaluation and the squares which the pawns control because that is used in 
     //Space and knight evaluation
+=======
+constexpr uint64_t BOTTOM_HALF = 0x00000000FFFFFFFFULL;
+constexpr uint64_t TOP_HALF    = 0xFFFFFFFF00000000ULL;
+
+int Evaluation(const chess::Board& board){
+    int Perspective = board.sideToMove() == chess::Color::WHITE ? 1 : -1;
+
+    // Get Bitboards for evaluation
+>>>>>>> Stashed changes
     chess::Bitboard WPawns = board.pieces(chess::PieceType::PAWN, chess::Color::WHITE);
     chess::Bitboard BPawns = board.pieces(chess::PieceType::PAWN, chess::Color::BLACK);
+
+    chess::Bitboard WKnights = board.pieces(chess::PieceType::KNIGHT, chess::Color::WHITE);
+    chess::Bitboard BKnights = board.pieces(chess::PieceType::KNIGHT, chess::Color::BLACK);
     
-    // TODO: OPTIMIZE THIS WE ONLY NEED TO CALCULATE THIS WHEN THERE ARE KNIGHTS ON THE BOARD
-    chess::Bitboard WPawnsSq = GetPawnControlledSquares(WPawns, chess::Color::WHITE);
-    chess::Bitboard BPawnsSq = GetPawnControlledSquares(BPawns, chess::Color::BLACK);
+    chess::Bitboard WBishops = board.pieces(chess::PieceType::BISHOP, chess::Color::WHITE);
+    chess::Bitboard BBishops = board.pieces(chess::PieceType::BISHOP, chess::Color::BLACK);
+
+    chess::Bitboard WRooks = board.pieces(chess::PieceType::ROOK, chess::Color::WHITE);
+    chess::Bitboard BRooks = board.pieces(chess::PieceType::ROOK, chess::Color::BLACK);
+    
+    chess::Bitboard WQueen = board.pieces(chess::PieceType::QUEEN, chess::Color::WHITE);
+    chess::Bitboard BQueen = board.pieces(chess::PieceType::QUEEN, chess::Color::BLACK);
+
+    chess::Bitboard WKing = board.pieces(chess::PieceType::KING, chess::Color::WHITE);
+    chess::Bitboard BKing = board.pieces(chess::PieceType::KING, chess::Color::BLACK);
+
+    chess::Bitboard WPawnsThreats = GetPawnControlledSquares(WPawns, chess::Color::WHITE);
+    chess::Bitboard BPawnsThreats = GetPawnControlledSquares(BPawns, chess::Color::BLACK);
 
     //We get the bitboards for both sides to combine them
-    chess::Bitboard WhiteBitboard = board.us(chess::Color::WHITE);
-    chess::Bitboard BlackBitboard = board.us(chess::Color::BLACK);
+    chess::Bitboard WhiteBitboard = WPawns | WKnights | WBishops | WRooks | WQueen | WKing;
+    chess::Bitboard BlackBitboard = BPawns | BKnights | BBishops | BRooks | BQueen | BKing;
 
     chess::Bitboard CombinedBitboard = WhiteBitboard | BlackBitboard;
 
+<<<<<<< Updated upstream
     //Now we get the indexes for all the pieces on the board so we can just check them and not have to loop over the entire board
     //Which is probably twice as efficient because we at most have to check 32 squares and not the entire 64 squares on the board
     //Also this function gets more efficient as the game progresses because less pieces = less indexes to check instead of having 
     //to check a constant 64 squares
     uint64_t Indexes = CombinedBitboard.getBits();
+=======
+    // Now we get the indexes for all the pieces on the board so we can just check them and not have to loop over the entire board
+    // Which is probably twice as efficient because we at most have to check 32 squares and not the entire 64 squares on the board
+    // Also this function gets more efficient as the game progresses because less pieces = less indexes to check instead of having 
+    // to check a constant 64 squares
+    chess::Bitboard Indexes = board.occ();
+>>>>>>> Stashed changes
 
-    int WhiteScore = 0;
-    int BlackScore = 0;
-
-    int WhiteBishops = 0;
-    int BlackBishops = 0;
+    double WhiteScore = 0;
+    double BlackScore = 0;
 
     // Calculate the weight for endgame influence
     // Get the Weight form the opposition's side to know when to get aggresive
+<<<<<<< Updated upstream
     // TODO: WE CAN PRECOMPUTE THIS ASWELL
     float WEndgameWeight = static_cast<float>(WhiteBitboard.count()) / 32.0f;
     float BEndgameWeight = static_cast<float>(BlackBitboard.count()) / 32.0f;
+=======
+    int WhitePieceCount  = WhiteBitboard.count();
+    int BlackPieceCount  = BlackBitboard.count();
 
-    chess::Square WKsq = board.kingSq(chess::Color::WHITE);
-    chess::Square BKsq = board.kingSq(chess::Color::BLACK);
+    double WEndgameWeight = static_cast<double>(BlackPieceCount) / 32.0;
+    double BEndgameWeight = static_cast<double>(WhitePieceCount) / 32.0;
+>>>>>>> Stashed changes
 
+    // Structural Evaluations
+    EvaluatePawns(WPawns, BPawns, WhiteScore, BlackScore, WEndgameWeight, BEndgameWeight);
+    EvaluateKnights(WKnights, BKnights, WPawns, BPawns, WPawnsThreats, BPawnsThreats, WhiteScore, BlackScore, WEndgameWeight, BEndgameWeight);
+    EvaluateBishops(WBishops, BBishops, WPawns, BPawns, WPawnsThreats, BPawnsThreats, WhiteScore, BlackScore, WEndgameWeight, BEndgameWeight);
+    EvaluateRooks(WRooks, BRooks, WPawns, BPawns, WhiteScore, BlackScore, WEndgameWeight, BEndgameWeight);
+
+<<<<<<< Updated upstream
     while (Indexes) {
         // Get the Index
         int Index = __builtin_ctzll(Indexes);
@@ -120,6 +160,55 @@ int Evaluation(const chess::Board& board, int Ply){
 
     WhiteScore += SafetyScore(WKsq, CombinedBitboard, WPawns, BEndgameWeight, true);
     BlackScore += SafetyScore(BKsq, CombinedBitboard, BPawns, WEndgameWeight, false);
+=======
+    while (Indexes != 0) {
+        const int Index = Indexes.pop();
+        const chess::Square Sq(Index);
+        const chess::Piece piece = board.at(Sq);
+        const int PieceType = piece.type();
+        const bool Color = piece.color() == chess::Color::WHITE;
+    
+        const float EndgameWeight  = Color ? WEndgameWeight : BEndgameWeight;
+        const int   PSTIndex       = Color ? Index          : 63 - Index;
+        double&        Score          = Color ? WhiteScore     : BlackScore;
+        
+        switch (PieceType) {
+            case 0:
+                Score += EvaluatePawn(Sq, EndgameWeight, Color, PSTIndex);
+                break;
+        
+            case 1: {
+                const chess::Bitboard EnemyPawnThreats = Color ? BPawnsThreats : WPawnsThreats;
+                Score += EvaluateKnight(Sq, EnemyPawnThreats, EndgameWeight, PSTIndex);
+                break;
+            }
+        
+            case 2: {
+                const chess::Bitboard EnemyPawns = Color ? BPawns : WPawns;
+                const uint64_t HalfTest = Color ? TOP_HALF : BOTTOM_HALF;
+                Score += EvaluateBishop(Sq, CombinedBitboard, EnemyPawns, HalfTest, EndgameWeight, PSTIndex);
+                break;
+            }
+        
+            case 3:
+                Score += EvaluateRook(Sq, CombinedBitboard, EndgameWeight, PSTIndex);
+                break;
+        
+            case 4:
+                Score += EvaluateQueen(Sq, CombinedBitboard, EndgameWeight, PSTIndex);
+                break;
+        
+            case 5: {
+                const chess::Bitboard FriendlyPawns = Color ? WPawns : BPawns;
+                Score += EvaluateKing(Sq, FriendlyPawns, CombinedBitboard, PSTIndex, EndgameWeight, Color);
+                break;
+            }
+        
+            default:
+                break;
+        }        
+    }
+>>>>>>> Stashed changes
 
     return (WhiteScore - BlackScore) * Perspective;
 }

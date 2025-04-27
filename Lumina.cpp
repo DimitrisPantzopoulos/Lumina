@@ -58,7 +58,7 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
 
     chess::Movelist LegalMoves = OrderMoves(board, BestMove, 0);
 
-    for (int PlyRemaining = 1; PlyRemaining < 256; PlyRemaining++) {
+    for (int PlyRemaining=1; PlyRemaining < 256; PlyRemaining++) {
         BestEval = Ninfinity;
 
         for (const auto &move : LegalMoves) {
@@ -76,7 +76,9 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
             }
 
             #ifdef LDEBUG
-                std::cout << "Searched: " << move << " Depth: " << PlyRemaining << " Eval: " << eval << std::endl;
+            std::cout << "Searched: " << move 
+                      << " Depth: " << PlyRemaining 
+                      << " Eval: " << eval << std::endl;
             #endif
         }
 
@@ -85,7 +87,9 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
         }
 
         #ifdef LDEBUG
-            std::cout << "Searched Depth: " << PlyRemaining << " BestMove: " << BestMove << " Eval: " << BestEval << std::endl;
+            std::cout << "Searched Depth: " << PlyRemaining 
+                      << " BestMove: " << BestMove 
+                      << " Eval: " << BestEval << std::endl;
         #endif
 
         if (!CanSearch) { 
@@ -96,11 +100,11 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
     }
 
     #ifdef LDEBUG
-        std::cout << std::endl;
-        std::cout << "Searched SEARCH  NODES: " << (std::round(DEBUG_SEARCH_NODES  / 1000)) << "K Nodes/s " << std::endl;
-        std::cout << "Searched QSEARCH NODES: " << (std::round(DEBUG_QSEARCH_NODES / 1000)) << "K Nodes/s " << std::endl;
-        std::cout << "Searched Total   NODES: " << (std::round(DEBUG_SEARCH_NODES  / 1000) + std::round(DEBUG_QSEARCH_NODES / 1000)) << "K Nodes/s " << std::endl;
-        std::cout << std::endl;
+        std::cout << "\n"
+                    << "Searched SEARCH  NODES: " << std::round(DEBUG_SEARCH_NODES / 1000) << "K Nodes/s\n"
+                    << "Searched QSEARCH NODES: " << std::round(DEBUG_QSEARCH_NODES / 1000) << "K Nodes/s\n"
+                    << "Searched Total   NODES: " 
+                    << std::round((DEBUG_SEARCH_NODES + DEBUG_QSEARCH_NODES) / 1000) << "K Nodes/s\n\n";
     #endif
 
     if (TimerThread.joinable()) {
@@ -147,7 +151,6 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
 
     for (int i=0; i<LegalMoves.size(); i++) {
         chess::Move move = LegalMoves[i];
-
         board.makeMove(move);
 
         int Extension = CalculateExtension(board, Extensions, move);
