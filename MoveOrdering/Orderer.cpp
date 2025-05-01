@@ -2,7 +2,6 @@
 #include "..\Helper\SEE.h"
 #include "..\Lumina.h"
 #include "..\Helper\HelperFunctions.h"
-
 #include <algorithm>
 #include <vector>
 
@@ -24,7 +23,7 @@ bool compareMoves(const ScoredMove &a, const ScoredMove &b) {
     return a.score > b.score;
 }
 
-chess::Movelist Lumina::OrderMoves(chess::Board& board, chess::Move& HashMove, const int Ply)
+chess::Movelist Lumina::OrderMoves(const chess::Board& board, const chess::Move& HashMove, const int Ply)
 {
     chess::Movelist KillerMoves = KillerMoveTable.getKillerMoves(Ply);
 
@@ -47,8 +46,8 @@ chess::Movelist Lumina::OrderMoves(chess::Board& board, chess::Move& HashMove, c
         chess::Piece MovingPiece = board.at(FromSq);
         chess::Piece Target      = board.at(ToSq);
 
-        chess::PieceType Attacker = MovingPiece.type();
-        chess::PieceType Victim   = Target.type();
+        int Attacker = MovingPiece.type();
+        int Victim   = Target.type();
 
         int AttackerScore = PiecesValue(Attacker);
         int VictimScore   = PiecesValue(Victim);
@@ -92,7 +91,7 @@ chess::Movelist Lumina::OrderMoves(chess::Board& board, chess::Move& HashMove, c
     return SortedMoves;
 }
 
-chess::Movelist Lumina::OrderCaptures(chess::Board& board, chess::Move& HashMove)
+chess::Movelist Lumina::OrderCaptures(const chess::Board& board, const chess::Move& HashMove)
 {
     chess::Movelist Moves;
     chess::movegen::legalmoves<chess::movegen::MoveGenType::CAPTURE>(Moves, board);
@@ -111,8 +110,8 @@ chess::Movelist Lumina::OrderCaptures(chess::Board& board, chess::Move& HashMove
         chess::Piece MovingPiece = board.at(FromSq);
         chess::Piece Target = board.at(ToSq);
 
-        chess::PieceType Attacker = MovingPiece.type();
-        chess::PieceType Victim   = Target.type();
+        int Attacker = MovingPiece.type();
+        int Victim   = Target.type();
 
         int AttackerScore = PiecesValue(Attacker);
         int VictimScore   = PiecesValue(Victim);

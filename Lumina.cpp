@@ -85,19 +85,6 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
             #endif
         }
 
-<<<<<<< Updated upstream
-        if (BestEval != Ninfinity) {
-            LastValidEval = BestEval;
-        }
-
-        #ifdef LDEBUG
-            std::cout << "Searched Depth: " << PlyRemaining 
-                      << " BestMove: " << BestMove 
-                      << " Eval: " << BestEval << std::endl;
-        #endif
-
-=======
->>>>>>> Stashed changes
         if (!CanSearch) { 
             break; 
         }
@@ -215,7 +202,7 @@ int Lumina::QSearch(chess::Board& board, int alpha, int beta, int Ply) {
         BestMove = ttEntry.bestMove;
     }
 
-    int eval = Evaluation(board, Ply);
+    int eval = Evaluation(board);
 
     if (eval >= beta) { return beta; }
     if (eval > alpha) { alpha = eval;}
