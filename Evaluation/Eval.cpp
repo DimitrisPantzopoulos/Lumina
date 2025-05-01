@@ -1,10 +1,14 @@
 #include "..\ChessLib\chess-library\include\chess.hpp"
 #include "..\Helper\HelperFunctions.h"
+<<<<<<< Updated upstream
+=======
+#include "..\EvaluationFeatures\Features.h"
+>>>>>>> Stashed changes
 
 #include "EvalHelp.h"
 #include "Eval.h"
-#include <map>
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 #define ImmediateMateScore 999999
 
@@ -57,8 +61,42 @@ int Evaluation(const chess::Board& board){
     //We get the bitboards for both sides to combine them
     chess::Bitboard WhiteBitboard = WPawns | WKnights | WBishops | WRooks | WQueen | WKing;
     chess::Bitboard BlackBitboard = BPawns | BKnights | BBishops | BRooks | BQueen | BKing;
+=======
+int Evaluation(const chess::Board& board)
+{
+    int Perspective = board.sideToMove() == chess::Color::WHITE ? 1 : -1;
 
-    chess::Bitboard CombinedBitboard = WhiteBitboard | BlackBitboard;
+    constexpr uint64_t NOT_HFILE = ~0x8080808080808080ULL;
+    constexpr uint64_t NOT_AFILE = ~0x0101010101010101ULL;
+
+    // Get Bitboards for evaluation
+    const chess::Bitboard WPawns = board.pieces(chess::PieceType::PAWN, chess::Color::WHITE);
+    const chess::Bitboard BPawns = board.pieces(chess::PieceType::PAWN, chess::Color::BLACK);
+
+    const chess::Bitboard WKnights = board.pieces(chess::PieceType::KNIGHT, chess::Color::WHITE);
+    const chess::Bitboard BKnights = board.pieces(chess::PieceType::KNIGHT, chess::Color::BLACK);
+    
+    const chess::Bitboard WBishops = board.pieces(chess::PieceType::BISHOP, chess::Color::WHITE);
+    const chess::Bitboard BBishops = board.pieces(chess::PieceType::BISHOP, chess::Color::BLACK);
+
+    const chess::Bitboard WRooks = board.pieces(chess::PieceType::ROOK, chess::Color::WHITE);
+    const chess::Bitboard BRooks = board.pieces(chess::PieceType::ROOK, chess::Color::BLACK);
+    
+    const chess::Bitboard WQueen = board.pieces(chess::PieceType::QUEEN, chess::Color::WHITE);
+    const chess::Bitboard BQueen = board.pieces(chess::PieceType::QUEEN, chess::Color::BLACK);
+
+    const chess::Bitboard WKing = board.pieces(chess::PieceType::KING, chess::Color::WHITE);
+    const chess::Bitboard BKing = board.pieces(chess::PieceType::KING, chess::Color::BLACK);
+
+    const chess::Bitboard WPawnsThreats = (WPawns & NOT_HFILE) << 9 | (WPawns & NOT_AFILE) << 7;
+    const chess::Bitboard BPawnsThreats = (BPawns & NOT_AFILE) >> 9 | (BPawns & NOT_HFILE) >> 7;
+
+    //We get the bitboards for both sides to combine them
+    const chess::Bitboard WhiteBitboard = WPawns | WKnights | WBishops | WRooks | WQueen | WKing;
+    const chess::Bitboard BlackBitboard = BPawns | BKnights | BBishops | BRooks | BQueen | BKing;
+>>>>>>> Stashed changes
+
+    const chess::Bitboard CombinedBitboard = WhiteBitboard | BlackBitboard;
 
 <<<<<<< Updated upstream
     //Now we get the indexes for all the pieces on the board so we can just check them and not have to loop over the entire board
@@ -74,8 +112,13 @@ int Evaluation(const chess::Board& board){
     chess::Bitboard Indexes = board.occ();
 >>>>>>> Stashed changes
 
+<<<<<<< Updated upstream
     double WhiteScore = 0;
     double BlackScore = 0;
+=======
+    int WhiteScore = 0;
+    int BlackScore = 0;
+>>>>>>> Stashed changes
 
     // Calculate the weight for endgame influence
     // Get the Weight form the opposition's side to know when to get aggresive
@@ -87,8 +130,13 @@ int Evaluation(const chess::Board& board){
     int WhitePieceCount  = WhiteBitboard.count();
     int BlackPieceCount  = BlackBitboard.count();
 
+<<<<<<< Updated upstream
     double WEndgameWeight = static_cast<double>(BlackPieceCount) / 32.0;
     double BEndgameWeight = static_cast<double>(WhitePieceCount) / 32.0;
+>>>>>>> Stashed changes
+=======
+    float WEndgameWeight = static_cast<float>(WhitePieceCount) / 16.0f;
+    float BEndgameWeight = static_cast<float>(BlackPieceCount) / 16.0f;
 >>>>>>> Stashed changes
 
     // Structural Evaluations
@@ -96,6 +144,7 @@ int Evaluation(const chess::Board& board){
     EvaluateKnights(WKnights, BKnights, WPawns, BPawns, WPawnsThreats, BPawnsThreats, WhiteScore, BlackScore, WEndgameWeight, BEndgameWeight);
     EvaluateBishops(WBishops, BBishops, WPawns, BPawns, WPawnsThreats, BPawnsThreats, WhiteScore, BlackScore, WEndgameWeight, BEndgameWeight);
     EvaluateRooks(WRooks, BRooks, WPawns, BPawns, WhiteScore, BlackScore, WEndgameWeight, BEndgameWeight);
+<<<<<<< Updated upstream
 
 <<<<<<< Updated upstream
     while (Indexes) {
@@ -211,4 +260,53 @@ int Evaluation(const chess::Board& board){
 >>>>>>> Stashed changes
 
     return (WhiteScore - BlackScore) * Perspective;
+=======
+
+    while (Indexes != 0) {
+        const int Index = Indexes.pop();
+        const chess::Square Sq(Index);
+        const chess::Piece piece = board.at(Sq);
+        const int PieceType = piece.type();
+        const bool Color = piece.color() == chess::Color::WHITE;
+    
+        const float EndgameWeight  = Color ? WEndgameWeight : BEndgameWeight;
+        const int   PSTIndex       = Color ? Index          : 63 - Index;
+        int&        Score          = Color ? WhiteScore     : BlackScore;
+
+        switch (PieceType) {
+            case 0: // PAWN
+                Score += EvaluatePawn(Sq, EndgameWeight, Color, PSTIndex);
+                break;
+        
+            case 1: { // KNIGHT
+                const chess::Bitboard& EnemyPawnThreats = Color ? BPawnsThreats : WPawnsThreats;
+                Score += EvaluateKnight(Sq, EnemyPawnThreats, EndgameWeight, PSTIndex, Color);
+                break;
+            }
+        
+            case 2:
+                Score += EvaluateBishop(Sq, CombinedBitboard, EndgameWeight, PSTIndex, Color);
+                break;
+        
+            case 3:
+                Score += EvaluateRook(Sq, CombinedBitboard, EndgameWeight, PSTIndex, Color);
+                break;
+        
+            case 4:
+                Score += EvaluateQueen(Sq, EndgameWeight, PSTIndex, Color);
+                break;
+        
+            case 5: {
+                const chess::Bitboard& FriendlyPawns = Color ? WPawns : BPawns;
+                Score += EvaluateKing(Sq, FriendlyPawns, CombinedBitboard, EndgameWeight, PSTIndex, Color);
+                break;
+            }
+        
+            default:
+                break;
+        }        
+    }
+
+    return (WhiteScore - BlackScore) * Perspective ;
+>>>>>>> Stashed changes
 }

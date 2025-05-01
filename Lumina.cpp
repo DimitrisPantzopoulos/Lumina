@@ -50,16 +50,17 @@ int CalculateExtension(chess::Board& board, int &Extensions, const chess::Move& 
 
 chess::Move Lumina::Think(Board& board, int Milliseconds) {
     CanSearch = true;
-
     auto TimerThread = std::thread(Timer, Milliseconds, std::ref(CanSearch));
-    chess::Move BestMove;
-    int BestEval = Ninfinity;
-    int LastValidEval = 0;
+
+    chess::Move BestMove = chess::Move::NO_MOVE;
+    int         BestEval = Ninfinity;
 
     chess::Movelist LegalMoves = OrderMoves(board, BestMove, 0);
 
     for (int PlyRemaining=1; PlyRemaining < 256; PlyRemaining++) {
         BestEval = Ninfinity;
+        std::vector<int> MoveScores;
+        MoveScores.reserve(LegalMoves.size());
 
         for (const auto &move : LegalMoves) {
             board.makeMove(move);
@@ -74,6 +75,8 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
                 BestEval = eval;
                 BestMove = move;
             }
+            
+            MoveScores.push_back(eval);
 
             #ifdef LDEBUG
             std::cout << "Searched: " << move 
@@ -82,6 +85,7 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
             #endif
         }
 
+<<<<<<< Updated upstream
         if (BestEval != Ninfinity) {
             LastValidEval = BestEval;
         }
@@ -92,11 +96,17 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
                       << " Eval: " << BestEval << std::endl;
         #endif
 
+=======
+>>>>>>> Stashed changes
         if (!CanSearch) { 
             break; 
         }
 
-        LegalMoves = OrderMoves(board, BestMove, 0);
+        LegalMoves = OrderFromIteration(LegalMoves, MoveScores);
+
+        #ifdef LDEBUG
+            std::cout << "Searched Depth: " << PlyRemaining << " BestMove: " << BestMove << " Eval: " << BestEval << std::endl;
+        #endif
     }
 
     #ifdef LDEBUG
@@ -109,10 +119,6 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
 
     if (TimerThread.joinable()) {
         TimerThread.join();
-    }
-
-    if (BestEval == Ninfinity) {
-        BestEval = LastValidEval;
     }
 
     std::cout << "info score cp " << BestEval << std::endl;

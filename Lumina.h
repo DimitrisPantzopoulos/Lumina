@@ -22,9 +22,16 @@ class Lumina {
         TT TT;
         
     public:
+<<<<<<< Updated upstream
         Movelist OrderMoves   (chess::Board& board, chess::Move& HashMove, const int Ply);
         Movelist OrderCaptures(Board& board, Move& HashMove);
 
+=======
+        Movelist OrderMoves        (const chess::Board& board, const chess::Move& HashMove, const int Ply);
+        Movelist OrderCaptures     (const Board& board, const Move& HashMove);
+        Movelist OrderFromIteration(const chess::Movelist& LegalMoves, const std::vector<int>& MoveScores);
+        
+>>>>>>> Stashed changes
         Move Think(Board& board, int Milliseconds);
         int  Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, int beta, int Extensions);
         int  QSearch(Board& board, int alpha, int beta, int Ply);

@@ -13,6 +13,7 @@ int EvaluateBishop(const chess::Square &sq, const chess::Bitboard occ ,const che
 int EvaluateQueen(const chess::Square &sq, const chess::Board& board, const chess::Bitboard& EnemyPawns, const chess::Bitboard occ, const chess::Color EnemyColor, float weight);
 =======
 #include "..\Helper\HelperFunctions.h"
+<<<<<<< Updated upstream
 
 constexpr double mg_pawn_table[64] = {
     0, 0, 0, 0, 0, 0, 0, 0,
@@ -142,6 +143,26 @@ constexpr double NOPAWNSHIELD_MG = 34.4031;
 constexpr double NOPAWNSHIELD_EG = 44.4031;
 constexpr double VQUEENSCOREMG = -15.7765;
 constexpr double VQUEENSCOREEG = -10.7765;
+=======
+#include "..\EvaluationFeatures\Features.h"
+
+inline int PiecesValueEval(const int& PieceType, float weight) {
+    switch (static_cast<int>(PieceType)) {
+        case 0: // PAWN
+            return TaperedEvaluation(weight, PAWN_VALUE_MG, PAWN_VALUE_EG);
+        case 1: // KNIGHT
+            return TaperedEvaluation(weight, KNIGHT_VALUE_MG, KNIGHT_VALUE_EG);
+        case 2: // BISHOP
+            return TaperedEvaluation(weight, BISHOP_VALUE_MG, BISHOP_VALUE_EG);
+        case 3: // ROOK
+            return TaperedEvaluation(weight, ROOK_VALUE_MG, ROOK_VALUE_EG);
+        case 4: // QUEEN
+            return TaperedEvaluation(weight, QUEEN_VALUE_MG, QUEEN_VALUE_EG);
+        default:
+            return  0;
+    }
+}
+>>>>>>> Stashed changes
 
 // END OF PSTS
 inline int PiecesValue(const int& PieceType){
@@ -173,6 +194,7 @@ inline int PiecesValue(const int& PieceType){
     }
 }
 
+<<<<<<< Updated upstream
 // Structural Evaluations
 void EvaluatePawns(
     const chess::Bitboard& WhitePawns, 
@@ -202,17 +224,25 @@ void EvaluateRooks(
 
 // Positional Evaluations
 inline double EvaluatePawn(
+=======
+inline int EvaluatePawn(
+>>>>>>> Stashed changes
     const chess::Square& Sq,
     const float EndgameWeight,
     const bool Color,
     int PSTIndex
 )
 {   
+<<<<<<< Updated upstream
+=======
+    int Score = 0;
+>>>>>>> Stashed changes
     int Rank = Sq.rank();
     Rank = Color ? Rank : (7 - Rank);
     int SquareIndex = PSTIndex;
     
     // Pawn Bonuses + Pawn Value + Pawn PST
+<<<<<<< Updated upstream
     return TaperedEvaluation(EndgameWeight, PawnBonuses[Rank], PawnBonusesEG[Rank]) +
            TaperedEvaluation(EndgameWeight, PAWN_VALUE_MG, PAWN_VALUE_EG)           +
            TaperedEvaluation(EndgameWeight, mg_pawn_table[SquareIndex], eg_pawn_table[SquareIndex]);
@@ -300,9 +330,147 @@ inline double EvaluateKing(
     uint64_t CombinedMask = LeftMask | KingForwardMask | RightMask;
 
     Score += (FriendlyPawns & CombinedMask).count() * TaperedEvaluation(weight, NOPAWNSHIELD_MG, NOPAWNSHIELD_EG);
+=======
+    int color = Color ? 0 : 1;
+
+    Score += TaperedEvaluation(EndgameWeight, PawnBonuses[Rank], PawnBonusesEG[Rank]);
+    Score += TaperedEvaluation(EndgameWeight, PAWN_VALUE_MG, PAWN_VALUE_EG);
+    Score += TaperedEvaluation(EndgameWeight, mg_pawn_table[SquareIndex], eg_pawn_table[SquareIndex]);
+>>>>>>> Stashed changes
 
     return Score;
 }
 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+inline int EvaluateKnight(
+    const chess::Square&   Sq,
+    const chess::Bitboard& EnemyPawnThreats,
+    const float EndgameWeight,
+    const int PSTIndex,
+    const bool Color
+)
+{   
+    int Score = 0;
+    int mobility = (chess::attacks::knight(Sq) & ~EnemyPawnThreats).count();;
+
+    Score += mobility * TaperedEvaluation(EndgameWeight, KNIGHTMOBILITY_MG, KNIGHTMOBILITY_EG);
+    Score += TaperedEvaluation(EndgameWeight, KNIGHT_VALUE_MG, KNIGHT_VALUE_EG);
+    Score += mg_knight_table[PSTIndex];
+
+    return Score;
+}
+
+inline int EvaluateBishop(
+    const chess::Square &Sq, 
+    const chess::Bitboard& occ, 
+    const float EndgameWeight,
+    const int PSTIndex,
+    const bool Color
+)
+{
+    int Score = 0;
+
+    // Bishop mobility = number of squares attacked
+    int mobility = chess::attacks::bishop(Sq, occ).count();
+
+    Score += mobility * TaperedEvaluation(EndgameWeight, BISHOPMOBILITY_MG, BISHOPMOBILITY_EG);
+    Score += TaperedEvaluation(EndgameWeight, BISHOP_VALUE_MG, BISHOP_VALUE_EG);
+    Score += mg_bishop_table[PSTIndex];
+    return Score;
+}
+
+inline int EvaluateRook(
+    const chess::Square &Sq, 
+    const chess::Bitboard& occ, 
+    const float EndgameWeight,
+    const int PSTIndex,
+    const bool Color
+)
+{
+    int Score = 0;
+    int mobility = chess::attacks::rook(Sq, occ).count();
+
+    Score += mobility * TaperedEvaluation(EndgameWeight, ROOKMOBILITY_MG, ROOKMOBILITY_EG);
+    Score += TaperedEvaluation(EndgameWeight, ROOK_VALUE_MG, ROOK_VALUE_EG);
+    Score += mg_rook_table[PSTIndex];
+
+    return Score;
+}
+
+
+inline int EvaluateQueen(
+    const chess::Square &Sq,
+    const float EndgameWeight,
+    const int PSTIndex,
+    const bool Color
+)
+{
+    int Score = 0;
+
+    Score += TaperedEvaluation(EndgameWeight, QUEEN_VALUE_MG, QUEEN_VALUE_EG);
+    Score += mg_queen_table[PSTIndex];
+
+    return Score;
+}
+
+inline int EvaluateKing(
+    const chess::Square &Sq,
+    const chess::Bitboard& FriendlyPawns,
+    const chess::Bitboard& occ,
+    const float EndgameWeight,
+    const int PSTIndex,
+    const bool Color
+)
+{   
+    int File = Sq.file();
+    int Score = 0;
+
+    constexpr uint64_t NOT_HFILE      = ~0x8080808080808080ULL;
+    constexpr uint64_t NOT_AFILE      = ~0x0101010101010101ULL;
+    
+
+    int VQUEEN = chess::attacks::queen(Sq, occ).count();
+
+    uint64_t KingMaskIndex = 1ULL << Sq.index();
+    uint64_t KingForwardMask = Color ? NorthFill(KingMaskIndex) : SouthFill(KingMaskIndex);
+    uint64_t LeftMask     = (KingForwardMask & NOT_AFILE) << 1;
+    uint64_t RightMask    = (KingForwardMask & NOT_HFILE) >> 1;
+    uint64_t CombinedMask = LeftMask | KingForwardMask | RightMask;
+
+    int PawnShieldCount = (FriendlyPawns & CombinedMask).count();
+
+    Score += PawnShieldCount * TaperedEvaluation(EndgameWeight, NOPAWNSHIELD_MG, NOPAWNSHIELD_EG);
+    Score += VQUEEN * TaperedEvaluation(EndgameWeight, VQUEENSCOREMG, VQUEENSCOREEG);
+    Score += TaperedEvaluation(EndgameWeight, mg_king_table[PSTIndex], eg_king_table[PSTIndex]);
+
+    return Score;
+}
+
+void EvaluatePawns(
+    const chess::Bitboard& WhitePawns, const chess::Bitboard& BlackPawns, 
+    int& WhiteScore, int& BlackScore, float Wweight, float Bweight
+);
+
+void EvaluateKnights(
+    const chess::Bitboard& WhiteKnights,            const chess::Bitboard& BlackKnights,
+    const chess::Bitboard& WhitePawns,              const chess::Bitboard& BlackPawns,
+    const chess::Bitboard& WhitePawnsAttackSquares, const chess::Bitboard& BlackPawnsAttackSquares,
+    int& WhiteScore, int& BlackScore, float Wweight, float Bweight
+);
+
+void EvaluateRooks(
+    const chess::Bitboard& WhiteRooks,              const chess::Bitboard& BlackRooks,
+    const chess::Bitboard& WhitePawns,              const chess::Bitboard& BlackPawns,
+    int& WhiteScore, int& BlackScore, float Wweight, float Bweight
+);
+
+void EvaluateBishops(
+    const chess::Bitboard& WhiteBishops,            const chess::Bitboard& BlackBishops,
+    const chess::Bitboard& WhitePawns,              const chess::Bitboard& BlackPawns,
+    const chess::Bitboard& WhitePawnsAttackSquares, const chess::Bitboard& BlackPawnsAttackSquares,
+    int& WhiteScore, int& BlackScore, float Wweight, float Bweight
+);
 >>>>>>> Stashed changes
 #endif
