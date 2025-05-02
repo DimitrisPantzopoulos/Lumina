@@ -30,7 +30,7 @@ constexpr std::array<int, 64> eg_pawn_table = {
     0, 0, 0, 0, 0, 0, 0, 0
 };
 
-constexpr array<int, 64> mg_knight_table = {
+constexpr std::array<int, 64> mg_knight_table = {
     -118, -69, -72, -50, -47, -47, -71, -113,
     -34, -53, -42, -18, -22, -52, -52, -17,
     -51, -12, -26, 1, 5, -30, -17, -53,
@@ -41,7 +41,7 @@ constexpr array<int, 64> mg_knight_table = {
     -294, -101, -51, -14, 10, -54, -86, -306
 };
 
-constexpr array<int, 64> mg_bishop_table = {
+constexpr std::array<int, 64> mg_bishop_table = {
     -12, 38, -19, -42, -29, -45, 41, -51,
     14, 23, 25, -8, -31, 8, 3, 25,
     20, 22, 20, 22, 32, 6, 27, -9,
@@ -52,7 +52,7 @@ constexpr array<int, 64> mg_bishop_table = {
     -56, -17, -33, -4, -16, -11, -7, -58
 };
 
-constexpr array<int, 64> mg_rook_table = {
+constexpr std::array<int, 64> mg_rook_table = {
     -36, -8, -5, 5, 3, -7, -7, -33,
     -43, -29, -19, -21, -22, -20, -9, -50,
     -28, -1, -28, -24, -29, -20, -6, -19,
@@ -63,7 +63,7 @@ constexpr array<int, 64> mg_rook_table = {
     89, 66, 89, 68, 71, 84, 88, 78
 };
 
-constexpr array<int, 64> mg_queen_table = {
+constexpr std::array<int, 64> mg_queen_table = {
     -52, -68, -59, -9, -35, -71, -78, -69,
     -55, -43, -6, -9, -14, -17, -36, -39,
     -34, -4, 1, -9, -5, 8, -11, -19,
@@ -74,7 +74,7 @@ constexpr array<int, 64> mg_queen_table = {
     -29, 32, 82, 92, 94, 73, 9, -19
 };
 
-constexpr array<int, 64> mg_king_table = {
+constexpr std::array<int, 64> mg_king_table = {
     -114, -44, -84, -131, -127, -83, -60, -126,
     -78, -45, -39, -51, -57, -46, -53, -91,
     -103, -27, 8, 18, 16, -3, -37, -120,
@@ -85,7 +85,7 @@ constexpr array<int, 64> mg_king_table = {
     -232, -44, -18, -17, -16, -57, -71, -212
 };
 
-constexpr array<int, 64> eg_king_table = {
+constexpr std::array<int, 64> eg_king_table = {
     -134, -44, -74, -101, -97, -73, -60, -146,
     -78, -25, -9, -1, -7, -16, -33, -91,
     -103, 3, 68, 98, 96, 57, -7, -120,

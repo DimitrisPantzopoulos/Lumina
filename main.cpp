@@ -1,160 +1,149 @@
 #include "ChessLib/chess-library/include/chess.hpp"
 #include "Lumina.h"
-#include "Book/Book.h"
 
 #include <iostream>
 #include <string>
 #include <vector>
 #include <sstream>
+#include <algorithm>
 
 using namespace std;
+using namespace chess;
 
-Lumina bot;
-Trie   book;
-Board  board;
-string FEN = board.getFen();
-
-void FindBestMove(vector<string>& sequence, int Milliseconds) {
-    Move bestMove = bot.Think(board, Milliseconds);
-    sequence.push_back(uci::moveToSan(board, bestMove));
-    board.makeMove(bestMove);
-}
+const char* DEFAULTFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 void HandleUCIStart(){
-    cout << "id name Lumina" << endl;
-    cout << "id author Dimitris Pantzopoulos" << endl;
-    cout << "option name Threads type spin default 2 min 2 max 2" << endl;
-    cout << "option name Hash type spin default 64 min 64 max 64" << endl;
-    cout << "uciok" << endl;
+    // Print the ASCII art
+    std::cout << R"(    __                  _                  *                )" << "\n";
+    std::cout << R"(   / /  _   _ _ __ ___ (_)_ __   __ _       \               )" << "\n";
+    std::cout << R"(  / /  | | | | '_ ` _ \| | '_ \ / _` |       * --- *   *    )" << "\n";
+    std::cout << R"( / /__ | |_| | | | | | | | | | | (_| |              \ /     )" << "\n";
+    std::cout << R"( \____/\____ |_| |_| |_|_|_| |_|\__,_|               *      )" << "\n";
+    std::cout << "id name Lumina \n";
+    std::cout << "id author Dimiboi \n";
+    std::cout << "uciok\n";
 }
 
-void HandleUCIStartpos(string command, vector<string>& sequence){
-    vector<string> info;
-    istringstream iss(command);
-    string word;
+void HandleIsReady(){
+    std::cout << "readyok \n";
+}
 
-    while (iss >> word) info.push_back(word);
+void HandleUCINewGame(Lumina& Lumina, chess::Board& Board){
+    // Reset Board
+    Board.setFen(DEFAULTFEN); 
 
-    if (info.size() > 2) {
-        // If additional moves exist, apply the opponent's move
-        chess::Move opponentMove = uci::uciToMove(board, info.back());
-        sequence.push_back(uci::moveToSan(board, opponentMove));
-        board.makeMove(opponentMove);
-    } else {
-        // Reset to starting position if no moves have been played
-        board.setFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    // Reset Lumina
+    Lumina.ClearKMT();
+    Lumina.ClearTT();
+}
+
+void HandlePosition(chess::Board& Board, const vector<string>& Tokens){
+    // Handle Error
+    if (Tokens.size() <= 1){
+        std::cout << "[ERROR] Unknown Position Command! Quitting program" << std::endl;
+        std::exit(0);
     }
 
-    FEN = board.getFen();
-}
+    const string PositionCommand = Tokens[1];
 
-void HandleUCIGo(string command, vector<string>& sequence, bool& opening){
-    istringstream iss(command);
-    string token, fen;
-    std::vector<string> TimeControl;
+    // Find the position in the vector of the "moves" token
+    auto it = std::find(Tokens.begin(), Tokens.end(), "moves");
 
-    while (iss >> token){
-        if(token == "wtime" || token == "btime"){continue;}
-        TimeControl.push_back(token);
+    // Assert that the "moves" token is in the vector 
+
+    // Now we have the FEN and Moves indexes
+    int MovesIdx = it == Tokens.end() ? int(Tokens.size()) : int(std::distance(Tokens.begin(), it));
+
+    // Handle UCI Startpos
+    if (PositionCommand == "startpos") {
+        Board.setFen(DEFAULTFEN);
     }
     
-    //The commented code is an attempt to dynamically find how long we should search based on how much time is left, I've left it out because i think to improve the
-    //search function it would be better to have this variable be the same for testing purposes. Also this has a wierd bug which causes the program to disconnect from 
-    //fastchess my guess is because its trying to search for a few milliseconds it cant do it fast enough so it just returns a null move or smth.
-    int TimeToSearch = 100; //(board.sideToMove() == Color::WHITE ? std::stoi(TimeControl[2]) : std::stoi(TimeControl[4])) / (AvgMovesaGame - sequence.size() + 1);   
+    // Handle Custom FEN
+    else if (PositionCommand == "fen") {
+        // Get the full FEN and apply it to the board
+        // This is to prevent subtle errors
+        assert(MovesIdx - 2 == 6);
 
-    if (!opening) {
-        FindBestMove(sequence, TimeToSearch);
-    } else {
-        bool nextFound = false;
-        string sanMove;
-        tie(nextFound, sanMove) = book.FindNextMove(sequence);
+        string FEN = Tokens[2];
+        for (int i=3;i<MovesIdx;i++) {FEN += " " + Tokens[i];}
 
-        if (nextFound) {
-
-            chess::Move nextMove = chess::uci::parseSan(board, sanMove);
-            sequence.push_back(sanMove);
-            board.makeMove(nextMove);
-            cout << "bestmove " << uci::moveToUci(nextMove) << endl;
-
-        } else {
-
-            // Fall back to engine if no book move is found
-            opening = false;
-            FindBestMove(sequence, TimeToSearch);
-        }
+        Board.setFen(FEN);
     }
+
+    // Now apply the Moves
+    for (int i=MovesIdx+1;i<Tokens.size();i++) {Board.makeMove(chess::uci::uciToMove(Board, Tokens[i]));}
 }
 
-void HandleUCIPositionFen(string command, vector<string>& sequence){
-    // Handle FEN input and apply moves if present
-    istringstream iss(command);
-    string token, fen;
-    iss >> token >> token;
+void HandleGo(vector<string> Tokens, chess::Board& Board, Lumina& Lumina){
+    int TokenSize = Tokens.size();
 
-    // Capture FEN string
-    while (iss >> token && token != "moves")
-        fen += token + " ";
+    int WhiteTime = 0;
+    int BlackTime = 0;
+    int WInc = 0;
+    int BInc = 0;
 
-    if (!fen.empty() && fen.back() == ' ') fen.pop_back();
-    board.setFen(fen); 
-    sequence.clear();
+    for (int i=0;i<Tokens.size() - 1;i++){
+        string Token = Tokens[i];
 
-    // Apply any subsequent moves
-    while (iss >> token) {
-        chess::Move move = uci::uciToMove(board, token);
-        board.makeMove(move);
+        if      (Token == "wtime") {WhiteTime = std::stoi(Tokens[++i]);}
+        else if (Token == "btime") {BlackTime = std::stoi(Tokens[++i]);}
+        else if (Token == "winc" ) {WInc      = std::stoi(Tokens[++i]);}
+        else if (Token == "binc" ) {BInc      = std::stoi(Tokens[++i]);}
     }
-}
 
-void HandleUCINewGame(string command, vector<string>& sequence, bool& opening){
-    // Reset for a new game
-    bot.ClearTT();
-    bot.ClearKMT();
-    board.setFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-    sequence.clear();
-    opening = false;
+    // Basic Time Control Formula:  (STM Time / 20) + (STM Inc / 2)
+    int TimeControl = 100; // Board.sideToMove() == chess::Color::WHITE ?
+                    //   (WhiteTime / 30) + (WInc / 2) :
+                    //   (BlackTime / 30) + (BInc / 2);
+
+    Lumina.Think(Board, std::max(TimeControl, 100));
 }
 
 void UCI() {
-    bool opening = false;
-    vector<string> sequence;
+    Lumina Lumina;
+    Board  Board;
+    string Line;
 
-    while (true) {
-        string command;
-        getline(cin, command);
+    while (getline(cin, Line)) {
+        // Receieve Info from the CLI to make the engine take an action
+        istringstream CLI(Line);
+        vector<string> Tokens;
+        string Token;
 
-        if (command == "uci") {
+        while (CLI >> Token)   {Tokens.push_back(Token);}
+        if    (Tokens.empty()) {continue;}
+
+        // The first Token is the command
+        const string Command = Tokens[0];
+
+        if (Command == "uci") {
             HandleUCIStart();
         }
 
-        else if (command.substr(0, 17) == "position startpos") {
-            HandleUCIStartpos(command, sequence);
+        else if (Command == "position") {
+            HandlePosition(Board, Tokens);
         }
 
-        else if (command.substr(0, 2) == "go") {
-            HandleUCIGo(command, sequence, opening);
+        else if (Command == "go") {
+            HandleGo(Tokens, Board, Lumina);
         }
 
-        else if (command.substr(0, 12) == "position fen") {
-           HandleUCIPositionFen(command, sequence);
+        else if (Command == "ucinewgame") {
+            HandleUCINewGame(Lumina, Board);
         }
 
-        else if (command == "ucinewgame") {
-            HandleUCINewGame(command, sequence, opening);
+        else if (Command == "isready") {
+            HandleIsReady();
         }
 
-        else if (command == "quit") {
-            break;  // Exit the loop and terminate the program
-        }
-
-        else if (command == "isready") {
-            cout << "readyok" << endl;
+        else if (Command == "quit") {
+            std::exit(0);
         }
         
         else {
             // Unknown or unsupported commands
-            cout << "Unknown command: " << command << endl;
+            cout << "Unknown command: " << Command << endl;
         }
     }
 }

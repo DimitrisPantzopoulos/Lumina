@@ -4,6 +4,20 @@
 #include "..\ChessLib\chess-library\include\chess.hpp"
 #include <vector>
 
+inline uint64_t NorthFill(uint64_t BB){
+    BB |= (BB << 8);
+    BB |= (BB << 16);
+    BB |= (BB << 32);
+    return BB;
+}
+
+inline uint64_t SouthFill(uint64_t BB){
+    BB |= (BB >> 8);
+    BB |= (BB >> 16);
+    BB |= (BB >> 32);
+    return BB;
+}
+
 inline int TaperedEvaluation(const float& weight, const int WeightMG, const int WeightEG){
     return static_cast<int>(weight * WeightMG + (1 - weight) * WeightEG);
 }

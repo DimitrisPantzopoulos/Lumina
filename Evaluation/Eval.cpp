@@ -12,18 +12,18 @@ int Evaluation(const chess::Board& board){
 
     // Get both pawn bitboards which is used in the Bishop Evaluation and the squares which the pawns control because that is used in 
     // Space and knight evaluation
-    chess::Bitboard WPawns = board.pieces(chess::PieceType::PAWN, chess::Color::WHITE);
-    chess::Bitboard BPawns = board.pieces(chess::PieceType::PAWN, chess::Color::BLACK);
+    const chess::Bitboard WPawns = board.pieces(chess::PieceType::PAWN, chess::Color::WHITE);
+    const chess::Bitboard BPawns = board.pieces(chess::PieceType::PAWN, chess::Color::BLACK);
     
     // TODO: OPTIMIZE THIS WE ONLY NEED TO CALCULATE THIS WHEN THERE ARE KNIGHTS ON THE BOARD
-    chess::Bitboard WPawnsSq = GetPawnControlledSquares(WPawns, chess::Color::WHITE);
-    chess::Bitboard BPawnsSq = GetPawnControlledSquares(BPawns, chess::Color::BLACK);
+    const chess::Bitboard WPawnsSq = GetPawnControlledSquares(WPawns, chess::Color::WHITE);
+    const chess::Bitboard BPawnsSq = GetPawnControlledSquares(BPawns, chess::Color::BLACK);
 
     //We get the bitboards for both sides to combine them
-    chess::Bitboard WhiteBitboard = board.us(chess::Color::WHITE);
-    chess::Bitboard BlackBitboard = board.us(chess::Color::BLACK);
+    const chess::Bitboard WhiteBitboard = board.us(chess::Color::WHITE);
+    const chess::Bitboard BlackBitboard = board.us(chess::Color::BLACK);
 
-    chess::Bitboard CombinedBitboard = WhiteBitboard | BlackBitboard;
+    const chess::Bitboard CombinedBitboard = WhiteBitboard | BlackBitboard;
 
     // Now we get the indexes for all the pieces on the board so we can just check them and not have to loop over the entire board
     // Which is probably twice as efficient because we at most have to check 32 squares and not the entire 64 squares on the board
@@ -49,42 +49,58 @@ int Evaluation(const chess::Board& board){
     chess::Square BKsq = board.kingSq(chess::Color::BLACK);
 
     while (Indexes != 0) {
-        int Index = Indexes.pop();
-        chess::Square Sq = chess::Square(Index);
-        chess::Piece piece = board.at(Index);
+        const int Index = Indexes.pop();
+        const chess::Square Sq = chess::Square(Index);
+        const chess::Piece piece = board.at(Index);
         
-        int PieceType = static_cast<int>(piece.type());
-        bool Color = piece.color() == chess::Color::WHITE;
+        const int PieceType = static_cast<int>(piece.type());
+        const bool Color = piece.color() == chess::Color::WHITE;
     
-        float EndgameWeight     = Color ? BEndgameWeight : WEndgameWeight;
-        float OppEndgameWeight  = Color ? WEndgameWeight : BEndgameWeight;
+        const float EndgameWeight     = Color ? BEndgameWeight : WEndgameWeight;
+        const float OppEndgameWeight  = Color ? WEndgameWeight : BEndgameWeight;
     
-        chess::Bitboard& OurPawns       = Color ? WPawns : BPawns;
-        chess::Bitboard& TheirPawns     = Color ? BPawns : WPawns;
-        chess::Bitboard& TheirPawnSq    = Color ? BPawnsSq : WPawnsSq;
+        const chess::Bitboard& OurPawns       = Color ? WPawns : BPawns;
+        const chess::Bitboard& TheirPawns     = Color ? BPawns : WPawns;
+        const chess::Bitboard& TheirPawnSq    = Color ? BPawnsSq : WPawnsSq;
     
-        chess::Color OpponentColor      = Color ? chess::Color::BLACK : chess::Color::WHITE;
-    
+        const chess::Color OpponentColor     = Color ? chess::Color::BLACK : chess::Color::WHITE;
+        const int SquareIndex = Color ? Index : 63 - Index;
+
         int& Score = Color ? WhiteScore : BlackScore;
-    
-        Score += PiecesValueEval(PieceType, EndgameWeight) + PST(PieceType, Color, Index, EndgameWeight);
     
         switch (PieceType) {
             case 0: // PAWN
                 Score += EvaluatePawn(Sq, TheirPawns, OurPawns, EndgameWeight, Color);
+                Score += TaperedEvaluation(EndgameWeight, PAWN_VALUE_MG, PAWN_VALUE_EG);
+                Score += TaperedEvaluation(EndgameWeight, mg_pawn_table[SquareIndex], eg_pawn_table[SquareIndex]);
                 break;
             case 1: // KNIGHT
                 Score += EvaluateKnight(Sq, TheirPawns, OurPawns, TheirPawnSq, EndgameWeight, Color);
+                Score += TaperedEvaluation(EndgameWeight, KNIGHT_VALUE_MG, KNIGHT_VALUE_EG);
+                Score += mg_knight_table[SquareIndex];
                 break;
             case 2: // BISHOP
                 Score += EvaluateBishop(Sq, CombinedBitboard, TheirPawns, OurPawns, TheirPawnSq, EndgameWeight, Color);
+                Score += TaperedEvaluation(EndgameWeight, BISHOP_VALUE_MG, BISHOP_VALUE_EG);
+                Score += mg_bishop_table[SquareIndex];
+
                 if (Color)
                     WhiteBishops++;
                 else
                     BlackBishops++;
+
                 break;
             case 3: // ROOK
                 Score += EvaluateRooks(Sq, TheirPawns, OurPawns, CombinedBitboard, EndgameWeight, Color);
+                Score += TaperedEvaluation(EndgameWeight, ROOK_VALUE_MG, ROOK_VALUE_EG);
+                Score += mg_rook_table[SquareIndex];
+                break;
+            case 4: // QUEEN
+                Score += TaperedEvaluation(EndgameWeight, QUEEN_VALUE_MG, QUEEN_VALUE_EG);
+                Score += mg_queen_table[SquareIndex];
+                break;
+            case 5:
+                Score += TaperedEvaluation(EndgameWeight, mg_king_table[SquareIndex], eg_king_table[SquareIndex]);
                 break;
         }
     }
