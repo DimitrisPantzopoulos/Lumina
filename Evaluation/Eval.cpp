@@ -54,14 +54,14 @@ int Evaluation(const chess::Board& board)
     int WhitePieceCount  = WhiteBitboard.count();
     int BlackPieceCount  = BlackBitboard.count();
 
-    float WEndgameWeight = static_cast<float>(WhitePieceCount) / 16.0f;
-    float BEndgameWeight = static_cast<float>(BlackPieceCount) / 16.0f;
+    float WMiddlegameWeight = static_cast<float>(WhitePieceCount) / 32.0f;
+    float BMiddlegameWeight = static_cast<float>(BlackPieceCount) / 32.0f;
 
     // Structural Evaluations
-    EvaluatePawns(WPawns, BPawns, WhiteScore, BlackScore, WEndgameWeight, BEndgameWeight);
-    EvaluateKnights(WKnights, BKnights, WPawns, BPawns, WPawnsThreats, BPawnsThreats, WhiteScore, BlackScore, WEndgameWeight, BEndgameWeight);
-    EvaluateBishops(WBishops, BBishops, WPawns, BPawns, WPawnsThreats, BPawnsThreats, WhiteScore, BlackScore, WEndgameWeight, BEndgameWeight);
-    EvaluateRooks(WRooks, BRooks, WPawns, BPawns, WhiteScore, BlackScore, WEndgameWeight, BEndgameWeight);
+    EvaluatePawns(WPawns, BPawns, WhiteScore, BlackScore, WMiddlegameWeight, BMiddlegameWeight);
+    EvaluateKnights(WKnights, BKnights, WPawns, BPawns, WPawnsThreats, BPawnsThreats, WhiteScore, BlackScore, WMiddlegameWeight, BMiddlegameWeight);
+    EvaluateBishops(WBishops, BBishops, WPawns, BPawns, WPawnsThreats, BPawnsThreats, WhiteScore, BlackScore, WMiddlegameWeight, BMiddlegameWeight);
+    EvaluateRooks(WRooks, BRooks, WPawns, BPawns, WhiteScore, BlackScore, WMiddlegameWeight, BMiddlegameWeight);
 
     while (Indexes != 0) {
         const int Index = Indexes.pop();
@@ -70,7 +70,7 @@ int Evaluation(const chess::Board& board)
         const int PieceType = piece.type();
         const bool Color = piece.color() == chess::Color::WHITE;
     
-        const float EndgameWeight  = Color ? WEndgameWeight : BEndgameWeight;
+        const float EndgameWeight  = Color ? WMiddlegameWeight : BMiddlegameWeight;
         const int   PSTIndex       = Color ? Index          : 63 - Index;
         int&        Score          = Color ? WhiteScore     : BlackScore;
 
@@ -108,5 +108,5 @@ int Evaluation(const chess::Board& board)
         }        
     }
 
-    return (WhiteScore - BlackScore) * Perspective ;
+    return (WhiteScore - BlackScore) * Perspective;
 }

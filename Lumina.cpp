@@ -14,6 +14,7 @@
 
 #define Infinity     9999999
 #define Ninfinity   -Infinity
+#define ImmediateMateScore 100000
 
 #define UPPERBOUND 1
 #define EXACT      2
@@ -22,12 +23,6 @@
 #define QSEARCHDEPTH 0
 #define StartingPly  0
 #define ReduceDepth  2
-
-#ifdef LDEBUG
-    #include <cmath>
-    int DEBUG_SEARCH_NODES  = 0;
-    int DEBUG_QSEARCH_NODES = 0;
-#endif
 
 void Timer(int Milliseconds, std::atomic<bool>& CanSearch) {
     std::this_thread::sleep_for(std::chrono::milliseconds(Milliseconds));
@@ -48,8 +43,9 @@ int CalculateExtension(chess::Board& board, int &Extensions, const chess::Move& 
     return Extension;
 }
 
-chess::Move Lumina::Think(Board& board, int Milliseconds) {
+chess::Move Lumina::Think(chess::Board& board, int Milliseconds) {
     CanSearch = true;
+
     auto TimerThread = std::thread(Timer, Milliseconds, std::ref(CanSearch));
 
     chess::Move BestMove = chess::Move::NO_MOVE;
@@ -77,12 +73,6 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
             }
             
             MoveScores.push_back(eval);
-
-            #ifdef LDEBUG
-            std::cout << "Searched: " << move 
-                      << " Depth: " << PlyRemaining 
-                      << " Eval: " << eval << std::endl;
-            #endif
         }
 
         if (!CanSearch) { 
@@ -90,39 +80,23 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
         }
 
         LegalMoves = OrderFromIteration(LegalMoves, MoveScores);
-
-        #ifdef LDEBUG
-            std::cout << "Searched Depth: " << PlyRemaining << " BestMove: " << BestMove << " Eval: " << BestEval << std::endl;
-        #endif
     }
-
-    #ifdef LDEBUG
-        std::cout << "\n"
-                    << "Searched SEARCH  NODES: " << std::round(DEBUG_SEARCH_NODES / 1000) << "K Nodes/s\n"
-                    << "Searched QSEARCH NODES: " << std::round(DEBUG_QSEARCH_NODES / 1000) << "K Nodes/s\n"
-                    << "Searched Total   NODES: " 
-                    << std::round((DEBUG_SEARCH_NODES + DEBUG_QSEARCH_NODES) / 1000) << "K Nodes/s\n\n";
-    #endif
 
     if (TimerThread.joinable()) {
         TimerThread.join();
     }
 
     std::cout << "info score cp " << BestEval << std::endl;
-    std::cout << "bestmove " << chess::uci::moveToUci(BestMove) << std::endl;
+    std::cout << "bestmove "      << chess::uci::moveToUci(BestMove) << std::endl;
 
     return BestMove;
 }
 
 int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, int beta, int Extensions) {
-    #ifdef LDEBUG
-        DEBUG_SEARCH_NODES++;
-    #endif
-
     if (!CanSearch || board.isRepetition(1)) { return SEARCH_CANCELLED; }
-    
+
     chess::Move BestMove = chess::Move::NO_MOVE;
-    uint64_t key = board.zobrist();
+    uint64_t key = board.hash();
     TTEntry ttEntry;
     int ttype = UPPERBOUND;
 
@@ -134,13 +108,16 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
         BestMove = ttEntry.bestMove;
     }
 
-    chess::GameResult State = board.isGameOver().second;
+    chess::Movelist LegalMoves = OrderMoves(board, BestMove, Ply);
 
-    if (PlyRemaining == 0 || State != GameResult::NONE) {
-        return QSearch(board, alpha, beta, Ply);
+    // See if the game is over
+    if (LegalMoves.empty()){
+        return board.inCheck() ? -(ImmediateMateScore + Ply) : 0;
     }
 
-    chess::Movelist LegalMoves = OrderMoves(board, BestMove, Ply);
+    if (PlyRemaining == 0) {
+        return QSearch(board, alpha, beta, Ply);
+    }
 
     for (int i=0; i<LegalMoves.size(); i++) {
         chess::Move move = LegalMoves[i];
@@ -183,14 +160,10 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
 }
 
 int Lumina::QSearch(chess::Board& board, int alpha, int beta, int Ply) {
-    #ifdef LDEBUG
-        DEBUG_QSEARCH_NODES++;
-    #endif
-
     if (!CanSearch) { return SEARCH_CANCELLED; }
 
     chess::Move BestMove = chess::Move::NO_MOVE;
-    uint64_t key = board.zobrist();
+    uint64_t key = board.hash();
     int ttype = UPPERBOUND;
     TTEntry ttEntry;
 
@@ -202,12 +175,16 @@ int Lumina::QSearch(chess::Board& board, int alpha, int beta, int Ply) {
         BestMove = ttEntry.bestMove;
     }
 
+    chess::Movelist LegalMoves = OrderCaptures(board, BestMove);
+
+    if (LegalMoves.empty()){
+        return board.inCheck() ? -(ImmediateMateScore + Ply) : 0;
+    }
+
     int eval = Evaluation(board);
 
     if (eval >= beta) { return beta; }
-    if (eval > alpha) { alpha = eval;}
-
-    chess::Movelist LegalMoves = OrderCaptures(board, BestMove);
+    if (eval > alpha) { alpha=eval;  }
 
     for (const auto &move : LegalMoves) {
         board.makeMove(move);

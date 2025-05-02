@@ -10,7 +10,6 @@ void EvaluatePawns(
     int& WhiteScore, int& BlackScore, float Wweight, float Bweight
 )
 {
-    constexpr uint64_t MIDDLE_SQUARES =  0x0000001818000000ULL;
     constexpr uint64_t NOT_HFILE      = ~0x8080808080808080ULL;
     constexpr uint64_t NOT_AFILE      = ~0x0101010101010101ULL;
 
@@ -100,7 +99,6 @@ void EvaluateKnights(
     int WhiteOutposts = __builtin_popcountll(WhiteKnightsMask & WhitePawnSupportSquares & TOP_HALF & ~BlackAdjacent);
     WhiteScore += WhiteOutposts * TaperedEvaluation(Wweight, KNIGHTOUTPOST_MG, KNIGHTOUTPOST_EG);
     
-
     int BlackOutposts = __builtin_popcountll(BlackKnightsMask & BlackPawnSupportSquares & BOTTOM_HALF & ~WhiteAdjacent);
     BlackScore += BlackOutposts * TaperedEvaluation(Bweight, KNIGHTOUTPOST_MG, KNIGHTOUTPOST_EG);
 }
@@ -126,6 +124,7 @@ void EvaluateRooks(
     // Open File and Semi-Open File
     uint64_t WhitePawnSouthFill = SouthFill(WhitePawnsMask);
     uint64_t BlackPawnSouthFill = SouthFill(BlackPawnsMask);
+    
     uint64_t WhitePawnNorthFill = NorthFill(WhitePawnsMask);
     uint64_t BlackPawnNorthFill = NorthFill(BlackPawnsMask);
 
@@ -133,10 +132,10 @@ void EvaluateRooks(
     uint64_t BlackPawnColumnFills = BlackPawnNorthFill | BlackPawnSouthFill;
 
     int WhiteOpenFiles = __builtin_popcountll((WhiteRooksMask & ~WhitePawnColumnFills) & ~BlackPawnColumnFills);
-    WhiteScore += WhiteOpenFiles * TaperedEvaluation(Wweight, ROOKBACKRANK_MG, ROOKBACKRANK_EG);
+    WhiteScore += WhiteOpenFiles * TaperedEvaluation(Wweight, ROOKOPENFILE_MG, ROOK_VALUE_EG);
 
     int BlackOpenFiles = __builtin_popcountll((BlackRooksMask & ~BlackPawnColumnFills) & ~WhitePawnColumnFills);
-    BlackScore += BlackOpenFiles * TaperedEvaluation(Bweight, ROOKBACKRANK_MG, ROOKBACKRANK_EG);
+    BlackScore += BlackOpenFiles * TaperedEvaluation(Bweight, ROOKOPENFILE_MG, ROOK_VALUE_EG);
 
     // 2nd and 7th Rank Heuristic
     int WhiteRooksOn7th = __builtin_popcountll(WhiteRooksMask & RANK_7);

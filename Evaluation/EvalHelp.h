@@ -13,14 +13,10 @@ inline int EvaluatePawn(
 )
 {   
     int Score = 0;
-    int Rank = Sq.rank();
-    Rank = Color ? Rank : (7 - Rank);
     int SquareIndex = PSTIndex;
     
     // Pawn Bonuses + Pawn Value + Pawn PST
-    int color = Color ? 0 : 1;
-
-    Score += TaperedEvaluation(EndgameWeight, PawnBonuses[Rank], PawnBonusesEG[Rank]);
+    // Score += TaperedEvaluation(EndgameWeight, PawnBonuses[Rank], PawnBonusesEG[Rank]);
     Score += TaperedEvaluation(EndgameWeight, PAWN_VALUE_MG, PAWN_VALUE_EG);
     Score += TaperedEvaluation(EndgameWeight, mg_pawn_table[SquareIndex], eg_pawn_table[SquareIndex]);
 
@@ -113,7 +109,6 @@ inline int EvaluateKing(
     constexpr uint64_t NOT_HFILE      = ~0x8080808080808080ULL;
     constexpr uint64_t NOT_AFILE      = ~0x0101010101010101ULL;
     
-
     int VQUEEN = chess::attacks::queen(Sq, occ).count();
 
     uint64_t KingMaskIndex = 1ULL << Sq.index();
@@ -155,4 +150,5 @@ void EvaluateBishops(
     const chess::Bitboard& WhitePawnsAttackSquares, const chess::Bitboard& BlackPawnsAttackSquares,
     int& WhiteScore, int& BlackScore, float Wweight, float Bweight
 );
+
 #endif

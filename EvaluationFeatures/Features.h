@@ -89,13 +89,13 @@ constexpr int eg_king_table[64] = {
     -266, 62, 177, 305, 202, 128, 69, -323
 };
 
-constexpr int PawnBonuses[8] = {
-    0, -28, 36, 98, 96, 172, 401, 0
-};
+// constexpr int PawnBonuses[8] = {
+//     0, -28, 36, 98, 96, 172, 401, 0
+// };
 
-constexpr int PawnBonusesEG[8] = {
-    0, -23, 41, 103, 101, 182, 421, 0
-};
+// constexpr int PawnBonusesEG[8] = {
+//     0, -23, 41, 103, 101, 182, 421, 0
+// };
 
 constexpr int PAWN_VALUE_MG = 295;
 constexpr int PAWN_VALUE_EG = 295;
