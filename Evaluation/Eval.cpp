@@ -4,7 +4,6 @@
 
 #include "EvalHelp.h"
 #include "Eval.h"
-#include <map>
 
 int Evaluation(const chess::Board& board){
     int Perspective = board.sideToMove() == chess::Color::WHITE ? 1 : -1;

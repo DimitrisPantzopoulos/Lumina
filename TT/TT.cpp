@@ -9,3 +9,7 @@ void Lumina::ClearTT(){
 void Lumina::ClearKMT(){
     KillerMoveTable.ClearKMT();
 }
+
+void Lumina::ClearHT(){
+    HistoryTable.Clear();
+}

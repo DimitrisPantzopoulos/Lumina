@@ -18,9 +18,10 @@ class Lumina {
     private:
         std::atomic<bool> CanSearch {true};
         
-        KMT KillerMoveTable   = KMT();
-        TT TranspositionTable = TT();
-        
+        KMT KillerMoveTable    = KMT();
+        TT  TranspositionTable = TT();
+        HT  HistoryTable       = HT();
+
     public:
         chess::Movelist OrderMoves   (const chess::Board& board, const chess::Move& HashMove, const int Ply);
         chess::Movelist OrderCaptures(const chess::Board& board, const Move& HashMove);
@@ -32,6 +33,7 @@ class Lumina {
 
         void ClearTT();
         void ClearKMT();
+        void ClearHT();
 };
 
 #endif

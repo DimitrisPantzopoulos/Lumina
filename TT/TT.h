@@ -139,4 +139,36 @@ struct KMT{
     }
 };
 
+struct HT{
+    uint16_t HistoryTable[2][64][64] = {};
+
+    void Clear(){
+        for (int color = 0; color < 2; ++color) {
+            for (int from = 0; from < 64; ++from) {
+                for (int to = 0; to < 64; ++to) {
+                    HistoryTable[color][from][to] = 0;
+                }
+            }
+        }
+    }
+
+    void Decay(){
+        for (int color = 0; color < 2; color++) {
+            for (int from = 0; from < 64; from++) {
+                for (int to = 0; to < 64; to++) {
+                    HistoryTable[color][from][to] >>= 2;
+                }
+            }
+        }
+    }
+
+    void Update(const bool Color, const chess::Move& Move, const int Depth){
+        HistoryTable[Color][Move.from().index()][Move.to().index()] += Depth * Depth;
+    }
+
+    int HistoryHeuristic(const bool Color, const chess::Move& Move){
+        return HistoryTable[Color][Move.from().index()][Move.to().index()];
+    }
+};
+
 #endif

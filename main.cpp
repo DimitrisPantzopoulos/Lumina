@@ -35,6 +35,7 @@ void HandleUCINewGame(Lumina& Lumina, chess::Board& Board){
     // Reset Lumina
     Lumina.ClearKMT();
     Lumina.ClearTT();
+    Lumina.ClearHT();
 }
 
 void HandlePosition(chess::Board& Board, const vector<string>& Tokens){

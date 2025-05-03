@@ -31,9 +31,13 @@ void Timer(int Milliseconds, std::atomic<bool>& CanSearch) {
 }
 
 chess::Move Lumina::Think(Board& board, int Milliseconds) {
+    // Launch Timer thread
     CanSearch = true;
-
     auto TimerThread = std::thread(Timer, Milliseconds, std::ref(CanSearch));
+
+    // Decay History Table
+    HistoryTable.Decay();
+    
     chess::Move BestMove = chess::Move::NO_MOVE;
     int         BestEval = Ninfinity;
 
@@ -95,6 +99,11 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
         else if (NodeType == EXACT)                            { return NodeValue; }
         else if (NodeType == LOWERBOUND && NodeValue >= beta)  { return NodeValue; }
 
+        else if (NodeType == LOWERBOUND) {alpha = std::max(alpha, NodeValue);}
+        else if (NodeType == UPPERBOUND) {beta  = std::min(beta, NodeValue);}
+
+        if (alpha >= beta) {return NodeValue;}
+
         BestMove = ttEntry.bestMove;
     }
 
@@ -135,7 +144,10 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
         if (eval >= beta) {
             TranspositionTable.storeTTEntry(key, beta, PlyRemaining, LOWERBOUND, move);
 
-            if (!board.isCapture(move) && !(move.typeOf() == chess::Move::PROMOTION)) { KillerMoveTable.addKillerMoves(move, eval, Ply); }
+            if (!board.isCapture(move) && !(move.typeOf() == chess::Move::PROMOTION)) {
+                KillerMoveTable.addKillerMoves(move, eval, Ply);
+                HistoryTable.Update(board.sideToMove(), move, PlyRemaining);
+            }
 
             return beta;
         }
@@ -167,6 +179,11 @@ int Lumina::QSearch(chess::Board& board, int alpha, int beta, int Ply) {
         else if (NodeType == EXACT)                            { return NodeValue; }
         else if (NodeType == LOWERBOUND && NodeValue >= beta)  { return NodeValue; }
 
+        else if (NodeType == LOWERBOUND) {alpha = std::max(alpha, NodeValue);}
+        else if (NodeType == UPPERBOUND) {beta  = std::min(beta, NodeValue);}
+
+        if (alpha >= beta) {return NodeValue;}
+        
         BestMove = ttEntry.bestMove;
     }
 

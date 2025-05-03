@@ -38,6 +38,8 @@ chess::Movelist Lumina::OrderMoves(const chess::Board& board, const chess::Move&
     //Extract the sorted moves into a Movelist
     chess::Movelist SortedMoves;
 
+    const bool stm = board.sideToMove();
+
     for (const auto &move : Moves){
         int Score = 0;
 
@@ -66,10 +68,12 @@ chess::Movelist Lumina::OrderMoves(const chess::Board& board, const chess::Move&
         {
             // MVV-LVA + SEE
             Score += SEE(board, move, 150) ? CAPTURE_SCORE + (VictimScore - AttackerScore) : (VictimScore - AttackerScore);
+        }else {
+            Score += HistoryTable.HistoryHeuristic(stm, move);
         }
 
         // Promotions are likely to be good
-        else if(move.typeOf() == chess::Move::PROMOTION){
+        if(move.typeOf() == chess::Move::PROMOTION){
             chess::PieceType PromotionType = move.promotionType();
             Score += PiecesValue(PromotionType);
         }
