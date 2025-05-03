@@ -1,7 +1,6 @@
 #include "..\ChessLib\chess-library\include\chess.hpp"
 #include "..\PrecomputedValues\Precomputed.h"
 #include "..\Helper\HelperFunctions.h"
-#include "..\PST\PST.h"
 
 #include "EvalHelp.h"
 #include "Eval.h"

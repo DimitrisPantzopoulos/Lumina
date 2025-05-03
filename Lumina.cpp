@@ -23,12 +23,6 @@
 #define StartingPly  0
 #define ReduceDepth  2
 
-#ifdef LDEBUG
-    #include <cmath>
-    int DEBUG_SEARCH_NODES  = 0;
-    int DEBUG_QSEARCH_NODES = 0;
-#endif
-
 #define ImmediateMateScore -999999
 
 void Timer(int Milliseconds, std::atomic<bool>& CanSearch) {
@@ -40,14 +34,15 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
     CanSearch = true;
 
     auto TimerThread = std::thread(Timer, Milliseconds, std::ref(CanSearch));
-    chess::Move BestMove;
-    int BestEval = Ninfinity;
-    int LastValidEval = 0;
+    chess::Move BestMove = chess::Move::NO_MOVE;
+    int         BestEval = Ninfinity;
 
     chess::Movelist LegalMoves = OrderMoves(board, BestMove, 0);
 
     for (int PlyRemaining = 1; PlyRemaining < 256; PlyRemaining++) {
         BestEval = Ninfinity;
+        std::vector<int> MoveScores;
+        MoveScores.reserve(LegalMoves.size());
 
         for (const auto &move : LegalMoves) {
             board.makeMove(move);
@@ -63,40 +58,18 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
                 BestMove = move;
             }
 
-            #ifdef LDEBUG
-                std::cout << "Searched: " << move << " Depth: " << PlyRemaining << " Eval: " << eval << std::endl;
-            #endif
+            MoveScores.push_back(eval);
         }
-
-        if (BestEval != Ninfinity) {
-            LastValidEval = BestEval;
-        }
-
-        #ifdef LDEBUG
-            std::cout << "Searched Depth: " << PlyRemaining << " BestMove: " << BestMove << " Eval: " << BestEval << std::endl;
-        #endif
 
         if (!CanSearch) { 
             break; 
         }
 
-        LegalMoves = OrderMoves(board, BestMove, 0);
+        LegalMoves = OrderFromIteration(LegalMoves, MoveScores);
     }
-
-    #ifdef LDEBUG
-        std::cout << std::endl;
-        std::cout << "Searched SEARCH  NODES: " << (std::round(DEBUG_SEARCH_NODES  / 1000)) << "K Nodes/s " << std::endl;
-        std::cout << "Searched QSEARCH NODES: " << (std::round(DEBUG_QSEARCH_NODES / 1000)) << "K Nodes/s " << std::endl;
-        std::cout << "Searched Total   NODES: " << (std::round(DEBUG_SEARCH_NODES  / 1000) + std::round(DEBUG_QSEARCH_NODES / 1000)) << "K Nodes/s " << std::endl;
-        std::cout << std::endl;
-    #endif
 
     if (TimerThread.joinable()) {
         TimerThread.join();
-    }
-
-    if (BestEval == Ninfinity) {
-        BestEval = LastValidEval;
     }
 
     std::cout << "info score cp " << BestEval << std::endl;
@@ -106,10 +79,6 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
 }
 
 int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, int beta, int Extensions) {
-    #ifdef LDEBUG
-        DEBUG_SEARCH_NODES++;
-    #endif
-
     if (!CanSearch || board.isRepetition(1)) { return SEARCH_CANCELLED; }
     
     chess::Move BestMove = chess::Move::NO_MOVE;
@@ -183,10 +152,6 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
 }
 
 int Lumina::QSearch(chess::Board& board, int alpha, int beta, int Ply) {
-    #ifdef LDEBUG
-        DEBUG_QSEARCH_NODES++;
-    #endif
-
     if (!CanSearch) { return SEARCH_CANCELLED; }
 
     chess::Move BestMove = chess::Move::NO_MOVE;
@@ -205,12 +170,12 @@ int Lumina::QSearch(chess::Board& board, int alpha, int beta, int Ply) {
         BestMove = ttEntry.bestMove;
     }
 
+    chess::Movelist LegalMoves = OrderCaptures(board, BestMove);
+
     int eval = Evaluation(board);
 
     if (eval >= beta) { return beta; }
     if (eval > alpha) { alpha = eval;}
-
-    chess::Movelist LegalMoves = OrderCaptures(board, BestMove);
 
     for (const auto &move : LegalMoves) {
         board.makeMove(move);

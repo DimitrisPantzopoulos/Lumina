@@ -138,3 +138,28 @@ chess::Movelist Lumina::OrderCaptures(const chess::Board& board, const chess::Mo
 
     return SortedMoves;
 }
+
+chess::Movelist Lumina::OrderFromIteration(const chess::Movelist& LegalMoves, const std::vector<int>& MoveScores){
+    // 1) Build a vector of (score, move) pairs
+    std::vector<std::pair<int, chess::Move>> scoredMoves;
+    scoredMoves.reserve(LegalMoves.size());
+    
+    for (size_t i = 0; i < LegalMoves.size(); ++i) {
+        scoredMoves.emplace_back(MoveScores[i], LegalMoves[i]);
+    }
+
+    // 2) Sort descending by score (stable so equal scores keep input order)
+    std::stable_sort(
+        scoredMoves.begin(), scoredMoves.end(),
+        [](auto &a, auto &b) {
+            return a.first > b.first;
+        });
+
+    // 3) Extract the ordered moves
+    chess::Movelist Ordered;
+    for (auto &p : scoredMoves) {
+        Ordered.add(p.second);
+    }
+
+    return Ordered;
+}
