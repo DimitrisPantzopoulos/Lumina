@@ -24,6 +24,7 @@
 #define ReduceDepth  2
 
 #define ImmediateMateScore -999999
+#define CheckmateThreshold 900000
 
 void Timer(int Milliseconds, std::atomic<bool>& CanSearch) {
     std::this_thread::sleep_for(std::chrono::milliseconds(Milliseconds));
@@ -37,7 +38,7 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
 
     // Decay History Table
     HistoryTable.Decay();
-    
+
     chess::Move BestMove = chess::Move::NO_MOVE;
     int         BestEval = Ninfinity;
 
@@ -109,6 +110,19 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
 
     if (PlyRemaining == 0) {
         return QSearch(board, alpha, beta, Ply);
+    }
+
+    // TODO: Add Zugswang detecion
+    if (PlyRemaining >= 3 && !board.inCheck()){
+        board.makeNullMove();
+        int NullEval = -Search(board, Ply + 1, PlyRemaining - ((PlyRemaining >= 6) ? 3 : 2), -beta, -beta+1, Extensions);
+        board.unmakeNullMove();
+
+        if (!CanSearch) {return SEARCH_CANCELLED;}
+
+        if (NullEval >= beta &&  abs(NullEval) < CheckmateThreshold){
+            return beta;
+        }
     }
 
     chess::Movelist LegalMoves = OrderMoves(board, BestMove, Ply);
