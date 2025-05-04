@@ -94,9 +94,7 @@ void HandleGo(vector<string> Tokens, chess::Board& Board, Lumina& Lumina){
     }
 
     // Basic Time Control Formula:  (STM Time / 20) + (STM Inc / 2)
-    int TimeControl = 100; // Board.sideToMove() == chess::Color::WHITE ?
-                    //   (WhiteTime / 30) + (WInc / 2) :
-                    //   (BlackTime / 30) + (BInc / 2);
+    int TimeControl = Board.sideToMove() == chess::Color::WHITE ? (WhiteTime / 20) + (WInc / 2) : (BlackTime / 20) + (BInc / 2);
 
     Lumina.Think(Board, std::max(TimeControl, 100));
 }

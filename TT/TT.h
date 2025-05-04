@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <vector>
 #include <ctime> 
+#include <algorithm>
 
 #define BYTES_IN_A_MB 1048576
 #define MAX_TT_SIZE_IN_MB 64
@@ -140,7 +141,7 @@ struct KMT{
 };
 
 struct HT{
-    uint16_t HistoryTable[2][64][64] = {};
+    int16_t HistoryTable[2][64][64] = {};
 
     void Clear(){
         for (int color = 0; color < 2; ++color) {
@@ -152,18 +153,11 @@ struct HT{
         }
     }
 
-    void Decay(){
-        for (int color = 0; color < 2; color++) {
-            for (int from = 0; from < 64; from++) {
-                for (int to = 0; to < 64; to++) {
-                    HistoryTable[color][from][to] >>= 2;
-                }
-            }
-        }
-    }
-
-    void Update(const bool Color, const chess::Move& Move, const int Depth){
-        HistoryTable[Color][Move.from().index()][Move.to().index()] += Depth * Depth;
+    void Update(const bool Color, const chess::Move& Move, const int Depth, const bool CausedBetaCutoff){
+        int16_t& ref = HistoryTable[Color][Move.from().index()][Move.to().index()];
+        int bonus = Depth * Depth * (CausedBetaCutoff ? 1 : -1);
+        ref += bonus - (ref * std::abs(bonus)) / 16384;
+        ref = std::clamp(ref, static_cast<int16_t>(-32767), static_cast<int16_t>(32767));
     }
 
     int HistoryHeuristic(const bool Color, const chess::Move& Move){

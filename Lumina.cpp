@@ -36,9 +36,6 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
     CanSearch = true;
     auto TimerThread = std::thread(Timer, Milliseconds, std::ref(CanSearch));
 
-    // Decay History Table
-    HistoryTable.Decay();
-
     chess::Move BestMove = chess::Move::NO_MOVE;
     int         BestEval = Ninfinity;
 
@@ -134,7 +131,8 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
     }
 
     for (int i=0; i<LegalMoves.size(); i++) {
-        chess::Move move = LegalMoves[i];
+        const chess::Move move = LegalMoves[i];
+        const bool isCapture = board.isCapture(move);
 
         board.makeMove(move);
 
@@ -142,7 +140,7 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
         bool needsFullSearch = true;
         int eval = 0;
 
-        if (i >= 3 && Extension == 0 && PlyRemaining >= 3 && !board.isCapture(move)) {
+        if (i >= 3 && Extension == 0 && PlyRemaining >= 3 && !isCapture) {
             eval = -Search(board, Ply + 1, PlyRemaining - ReduceDepth, -alpha-1, -alpha, Extensions);
             needsFullSearch = eval > alpha;
         }
@@ -158,12 +156,17 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
         if (eval >= beta) {
             TranspositionTable.storeTTEntry(key, beta, PlyRemaining, LOWERBOUND, move);
 
-            if (!board.isCapture(move) && !(move.typeOf() == chess::Move::PROMOTION)) {
+            if (!isCapture && !(move.typeOf() == chess::Move::PROMOTION)) {
                 KillerMoveTable.addKillerMoves(move, eval, Ply);
-                HistoryTable.Update(board.sideToMove(), move, PlyRemaining);
+                HistoryTable.Update(board.sideToMove(), move, PlyRemaining, true);
             }
 
             return beta;
+        }
+
+        // Negatively reward bad quiet moves in the History Table
+        if (!isCapture) {
+            HistoryTable.Update(board.sideToMove(), move, PlyRemaining, false);
         }
 
         if (eval > alpha) {
