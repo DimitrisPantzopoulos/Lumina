@@ -158,7 +158,7 @@ struct HT{
         int bonus = Depth * Depth * (CausedBetaCutoff ? 1 : -1);
         ref += bonus - (ref * std::abs(bonus)) / 16384;
         ref = std::clamp(ref, static_cast<int16_t>(-32767), static_cast<int16_t>(32767));
-    }
+    }   
 
     int HistoryHeuristic(const bool Color, const chess::Move& Move){
         return HistoryTable[Color][Move.from().index()][Move.to().index()];

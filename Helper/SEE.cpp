@@ -8,7 +8,7 @@
 bool SEE(const chess::Board& board, const chess::Move& move, const int Threshold) {
     static const std::array<chess::PieceType, 6> pts = {chess::PieceType::PAWN, chess::PieceType::KNIGHT, chess::PieceType::BISHOP, chess::PieceType::ROOK, chess::PieceType::QUEEN, chess::PieceType::KING};
 
-    chess::Square Target = move.to();
+    chess::Square Target       = move.to();
     chess::Square TargetOrigin = move.from();
 
     chess::PieceType TargetType = board.at(Target).type();
@@ -32,7 +32,7 @@ bool SEE(const chess::Board& board, const chess::Move& move, const int Threshold
 
     chess::Bitboard Queens  = board.pieces(chess::PieceType::QUEEN);
     chess::Bitboard Bishops = board.pieces(chess::PieceType::BISHOP);
-    chess::Bitboard Rooks = board.pieces(chess::PieceType::ROOK);
+    chess::Bitboard Rooks   = board.pieces(chess::PieceType::ROOK);
 
     chess::Color EnemyColor = ~board.at(TargetOrigin).color();
 

@@ -12,6 +12,7 @@ enum MoveTypes : int {
     CAPTURE_SCORE       =  7000000,
     FIRST_KILLER_SCORE  =  6000000,
     SECOND_KILLER_SCORE =  5000000,
+    PROMOTION_SCORE     =  4000000,
     NEGATIVE_SCORE      = -10000000,
 };
 
@@ -43,17 +44,19 @@ chess::Movelist Lumina::OrderMoves(const chess::Board& board, const chess::Move&
     for (const auto &move : Moves){
         int Score = 0;
 
-        chess::Square FromSq = move.from();
-        chess::Square ToSq = move.to();
+        const chess::Square FromSq = move.from();
+        const chess::Square ToSq = move.to();
 
-        chess::Piece MovingPiece = board.at(FromSq);
-        chess::Piece Target      = board.at(ToSq);
+        const chess::Piece MovingPiece = board.at(FromSq);
+        const chess::Piece Target      = board.at(ToSq);
 
-        chess::PieceType Attacker = MovingPiece.type();
-        chess::PieceType Victim   = Target.type();
+        const chess::PieceType Attacker = MovingPiece.type();
+        const chess::PieceType Victim   = Target.type();
 
-        int AttackerScore = PiecesValue(Attacker);
-        int VictimScore   = PiecesValue(Victim);
+        const int AttackerScore = PiecesValue(Attacker);
+        const int VictimScore   = PiecesValue(Victim);
+
+        const bool HasVictim = Target != chess::Piece::NONE;
 
         if(move == HashMove){
             Score += HASH_SCORE;
@@ -64,18 +67,20 @@ chess::Movelist Lumina::OrderMoves(const chess::Board& board, const chess::Move&
         }
 
         // Prioritise captures
-        if(Target != chess::Piece::NONE)
+        if(HasVictim)
         {
             // MVV-LVA + SEE
-            Score += SEE(board, move, 150) ? CAPTURE_SCORE + (VictimScore - AttackerScore) : (VictimScore - AttackerScore);
+            const bool GoodCapture = SEE(board, move, 0);
+            const int  LVA_MVV     = (VictimScore - AttackerScore);
+            
+            Score += GoodCapture ? CAPTURE_SCORE + LVA_MVV : LVA_MVV;
         }else {
             Score += HistoryTable.HistoryHeuristic(stm, move);
         }
 
         // Promotions are likely to be good
         if(move.typeOf() == chess::Move::PROMOTION){
-            chess::PieceType PromotionType = move.promotionType();
-            Score += PiecesValue(PromotionType);
+            Score += PROMOTION_SCORE + PiecesValue(move.promotionType());
         }
 
         // Discourage the pieces from going to squares that are being attacked
@@ -109,17 +114,17 @@ chess::Movelist Lumina::OrderCaptures(const chess::Board& board, const chess::Mo
     for (const auto &move : Moves){
         int Score = 0;
 
-        chess::Square FromSq = move.from();
-        chess::Square ToSq = move.to();
+        const chess::Square FromSq = move.from();
+        const chess::Square ToSq = move.to();
 
-        chess::Piece MovingPiece = board.at(FromSq);
-        chess::Piece Target = board.at(ToSq);
+        const chess::Piece MovingPiece = board.at(FromSq);
+        const chess::Piece Target      = board.at(ToSq);
 
-        chess::PieceType Attacker = MovingPiece.type();
-        chess::PieceType Victim   = Target.type();
+        const chess::PieceType Attacker = MovingPiece.type();
+        const chess::PieceType Victim   = Target.type();
 
-        int AttackerScore = PiecesValue(Attacker);
-        int VictimScore   = PiecesValue(Victim);
+        const int AttackerScore = PiecesValue(Attacker);
+        const int VictimScore   = PiecesValue(Victim);
 
         if(move == HashMove){
             Score += HASH_SCORE;

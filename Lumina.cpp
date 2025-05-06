@@ -39,20 +39,27 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
     chess::Move BestMove = chess::Move::NO_MOVE;
     int         BestEval = Ninfinity;
 
-    chess::Movelist LegalMoves = OrderMoves(board, BestMove, 0);
+    chess::Movelist LegalMoves = OrderMoves(board, BestMove, board.halfMoveClock());
+    std::vector<int> MoveScores;
 
-    for (int PlyRemaining = 1; PlyRemaining < 256; PlyRemaining++) {
+    int window = 200;
+    int alpha = Ninfinity;
+    int beta  = Infinity;
+
+    for (int PlyRemaining = 2; PlyRemaining < 256;) {    
         BestEval = Ninfinity;
-        std::vector<int> MoveScores;
+        MoveScores.clear();
         MoveScores.reserve(LegalMoves.size());
 
-        for (const auto &move : LegalMoves) {
+        for (const auto& move : LegalMoves) {
             board.makeMove(move);
-            int eval = -Search(board, StartingPly, PlyRemaining, Ninfinity, Infinity, 0);
+
+            int eval = -Search(board, StartingPly, PlyRemaining, -beta, -alpha, 0);
+
             board.unmakeMove(move);
 
-            if (!CanSearch) { 
-                break; 
+            if (!CanSearch) {
+                break;
             }
 
             if (eval > BestEval) {
@@ -62,11 +69,21 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
 
             MoveScores.push_back(eval);
         }
-
-        if (!CanSearch) { 
-            break; 
+        
+        if (!CanSearch) {
+            break;
         }
 
+        if (BestEval <= alpha || BestEval >= beta){
+            alpha = Ninfinity;
+            beta  = Infinity;
+            continue;
+        }
+        
+        alpha = BestEval - window;
+        beta  = BestEval + window;
+        PlyRemaining++;
+        
         LegalMoves = OrderFromIteration(LegalMoves, MoveScores);
     }
 
@@ -109,7 +126,6 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
         return QSearch(board, alpha, beta, Ply);
     }
 
-    // TODO: Add Zugswang detecion
     if (PlyRemaining >= 3 && !board.inCheck()){
         board.makeNullMove();
         int NullEval = -Search(board, Ply + 1, PlyRemaining - ((PlyRemaining >= 6) ? 3 : 2), -beta, -beta+1, Extensions);
@@ -117,7 +133,7 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
 
         if (!CanSearch) {return SEARCH_CANCELLED;}
 
-        if (NullEval >= beta &&  abs(NullEval) < CheckmateThreshold){
+        if (NullEval >= beta &&  std::abs(NullEval) < CheckmateThreshold) {
             return beta;
         }
     }
@@ -157,7 +173,7 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
             TranspositionTable.storeTTEntry(key, beta, PlyRemaining, LOWERBOUND, move);
 
             if (!isCapture && !(move.typeOf() == chess::Move::PROMOTION)) {
-                KillerMoveTable.addKillerMoves(move, eval, Ply);
+                KillerMoveTable.addKillerMoves(move, eval, board.halfMoveClock());
                 HistoryTable.Update(board.sideToMove(), move, PlyRemaining, true);
             }
 

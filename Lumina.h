@@ -29,7 +29,7 @@ class Lumina {
         
         chess::Move Think(chess::Board& board, int Milliseconds);
         int  Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, int beta, int Extensions);
-        int  QSearch(Board& board, int alpha, int beta, int Ply);
+        int  QSearch(chess::Board& board, int alpha, int beta, int Ply);
 
         void ClearTT();
         void ClearKMT();
