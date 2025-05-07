@@ -2,25 +2,25 @@
 
 #include "..\ChessLib\chess-library\include\chess.hpp"
 
+#define BISHOPPAIR_MG 154.0f
+#define BISHOPPAIR_EG 144.0f
+
+constexpr std::array<float, 32> GenerateEndgameWeights() {
+    std::array<float, 32> weights{};
+    for (int pieces = 0; pieces < 32; pieces++) {
+        weights[pieces] = static_cast<float>(pieces) / 32.0f;
+    }
+    return weights;
+}
+
+static constexpr std::array<float, 32> EndgameWeights = GenerateEndgameWeights();
+
 inline float CalculateEndgameWeights(const int& PieceCount){
-    static constexpr std::array<float, 17> EndgameWeights = [] {
-        std::array<float, 17> weights{};
- 
-        for (int pieces = 0; pieces <= 16; pieces++) {
-            weights[pieces] = static_cast<float>(pieces) / 32.0f;
-        }
-
-        return weights;
-    }();
-
     return EndgameWeights[PieceCount];
 }
 
 inline int PrecomputedBishopValues(const int& PieceCount){
     static constexpr std::array<int, 17> BishopWeights = [] {
-        #define BISHOPPAIR_MG 154.0f
-        #define BISHOPPAIR_EG 144.0f
-
         std::array<int, 17> weights{};
  
         for (int pieces = 0; pieces <= 16; pieces++) {

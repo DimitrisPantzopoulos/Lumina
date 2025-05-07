@@ -23,16 +23,13 @@ inline int TaperedEvaluation(const float& weight, const int WeightMG, const int 
 }
 
 inline chess::Bitboard GetPawnControlledSquares(const chess::Bitboard& pawns, const chess::Color color){
-    uint16_t PawnIndexes = pawns.getBits();
-
+    chess::Bitboard PawnIndexes = pawns;
     chess::Bitboard PawnAttackBitboard(0ULL);
 
-    while (PawnIndexes) {
-        int Index = __builtin_ctzll(PawnIndexes);
-        
+    while (PawnIndexes != 0) {
+        chess::Square Index(PawnIndexes.lsb());
         PawnAttackBitboard |= chess::attacks::pawn(color, Index);
-
-        PawnIndexes &= PawnIndexes - 1;
+        PawnIndexes &= PawnIndexes.pop();
     }
 
     return PawnAttackBitboard;

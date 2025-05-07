@@ -27,7 +27,7 @@ class Lumina {
         chess::Movelist OrderCaptures(const chess::Board& board, const Move& HashMove);
         chess::Movelist OrderFromIteration(const chess::Movelist& LegalMoves, const std::vector<int>& MoveScores);
         
-        chess::Move Think(chess::Board& board, int Milliseconds);
+        void Think(chess::Board& board, int Milliseconds);
         int  Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, int beta, int Extensions);
         int  QSearch(chess::Board& board, int alpha, int beta, int Ply);
 

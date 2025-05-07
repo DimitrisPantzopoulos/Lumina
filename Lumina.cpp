@@ -31,22 +31,24 @@ void Timer(int Milliseconds, std::atomic<bool>& CanSearch) {
     CanSearch = false;
 }
 
-chess::Move Lumina::Think(Board& board, int Milliseconds) {
+void Lumina::Think(chess::Board& board, int Milliseconds) {
     // Launch Timer thread
     CanSearch = true;
     auto TimerThread = std::thread(Timer, Milliseconds, std::ref(CanSearch));
 
-    chess::Move BestMove = chess::Move::NO_MOVE;
-    int         BestEval = Ninfinity;
+    chess::Move BestMove     = chess::Move::NO_MOVE;
+    int         BestEval     = Ninfinity;
+    int         LastBestEval = Ninfinity;
 
     chess::Movelist LegalMoves = OrderMoves(board, BestMove, board.halfMoveClock());
     std::vector<int> MoveScores;
 
+    // TODO: TUNE THE WINDOW SIZE
     int window = 200;
-    int alpha = Ninfinity;
-    int beta  = Infinity;
+    int alpha  = Ninfinity;
+    int beta   = Infinity;
 
-    for (int PlyRemaining = 2; PlyRemaining < 256;) {    
+    for (int PlyRemaining=2;;) {    
         BestEval = Ninfinity;
         MoveScores.clear();
         MoveScores.reserve(LegalMoves.size());
@@ -73,17 +75,19 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
         if (!CanSearch) {
             break;
         }
-
+        
+        // Aspiration Windows
         if (BestEval <= alpha || BestEval >= beta){
             alpha = Ninfinity;
             beta  = Infinity;
             continue;
         }
         
+        LastBestEval = BestEval;
         alpha = BestEval - window;
         beta  = BestEval + window;
         PlyRemaining++;
-        
+
         LegalMoves = OrderFromIteration(LegalMoves, MoveScores);
     }
 
@@ -91,10 +95,8 @@ chess::Move Lumina::Think(Board& board, int Milliseconds) {
         TimerThread.join();
     }
 
-    std::cout << "info score cp " << BestEval << std::endl;
+    std::cout << "info score cp " << LastBestEval << std::endl;
     std::cout << "bestmove " << chess::uci::moveToUci(BestMove) << std::endl;
-
-    return BestMove;
 }
 
 int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, int beta, int Extensions) {

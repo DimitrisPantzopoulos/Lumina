@@ -7,58 +7,7 @@
 #include <cmath>
 #include <map>
 
-constexpr int NOPAWNSHIELD_MG = 7;
-constexpr int NOPAWNSHIELD_EG = 15;
-
-constexpr int VQUEENSCOREMG = -18;
-constexpr int VQUEENSCOREEG = -5;
-
-constexpr int ISOLATEDPAWN_MG = -19;
-constexpr int ISOLATEDPAWN_EG = -15;
-
-constexpr int DOUBLEDPAWN_MG = -40;
-constexpr int DOUBLEDPAWN_EG = -29;
-
-constexpr int CENTREPAWN_MG = -4;
-constexpr int CENTREPAWN_EG = -8;
-
-constexpr int PHALANXBONUS_MG = 2;
-constexpr int PHALANXBONUS_EG = 6;
-
-constexpr int KNIGHTOUTPOST_MG = 82;
-constexpr int KNIGHTOUTPOST_EG = 71;
-
-constexpr int KNIGHTMOBILITY_MG = 35;
-constexpr int KNIGHTMOBILITY_EG = 29;
-
-constexpr int ROOKOPENFILE_MG = 43;
-constexpr int ROOKOPENFILE_EG = 64;
-
-constexpr int ROOKBACKRANK_MG = 77;
-constexpr int ROOKBACKRANK_EG = 57;
-
-constexpr int ROOKMOBILITY_MG = 16;
-constexpr int ROOKMOBILITY_EG = 17;
-
-constexpr int BISHOPOPENFILE_MG = 13;
-constexpr int BISHOPOPENFILE_EG = 19;
-
-constexpr int BISHOPFIXEDPAWNS_MG = -5;
-constexpr int BISHOPFIXEDPAWNS_EG = 5;
-
-constexpr int BISHOPMOBILITY_MG = 24;
-constexpr int BISHOPMOBILITY_EG = 26;
-
-constexpr int QUEENMOBILITY_MG = -10;
-constexpr int QUEENMOBILITY_EG = -13;
-
-constexpr int QUEENMIDDLESQUAREPRESSURE_MG = 4;
-constexpr int QUEENMIDDLESQUAREPRESSURE_EG = 1;
-
-constexpr int QUEENDISTANCE_MG = -46;
-constexpr int QUEENDISTANCE_EG = -41;
-
-int SafetyScore(const chess::Square &KSq, const chess::Bitboard& occ ,const chess::Bitboard &FriendPawns, float weight, bool isWhite) {
+int EvaluateKing(const chess::Square &KSq, const chess::Bitboard& occ, const chess::Bitboard &FriendPawns, float weight, bool isWhite) {
     int file = KSq.file();
     int rank = KSq.rank();
 
@@ -71,23 +20,18 @@ int SafetyScore(const chess::Square &KSq, const chess::Bitboard& occ ,const ches
     // Combine the masks
     uint64_t combinedMask = fileMask | flankFileMask;
 
-    int SafetyScore = 0;
+    int Score = 0;
     
     // See if the king has a pawn shield
-    SafetyScore += (FriendPawns & combinedMask).count() * TaperedEvaluation(weight, NOPAWNSHIELD_MG, NOPAWNSHIELD_EG);
+    Score += (FriendPawns & combinedMask).count() * TaperedEvaluation(weight, NOPAWNSHIELD_MG, NOPAWNSHIELD_EG);
 
     // Virtual Queen Score  
-    SafetyScore += chess::attacks::queen(KSq, occ).count() * TaperedEvaluation(weight, VQUEENSCOREMG, VQUEENSCOREEG);
+    Score += chess::attacks::queen(KSq, occ).count() * TaperedEvaluation(weight, VQUEENSCOREMG, VQUEENSCOREEG);
 
-    return SafetyScore;
+    return Score;
 }
 
 int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &EnemyPawns, const chess::Bitboard &FriendPawns, float weight, bool isWhite) {
-    static constexpr std::array<int, 7> PawnBonuses   = {0, 94, 202, 128, 60, 2, 8};
-    static constexpr std::array<int, 7> PawnBonusesEG = {0, 85, 187, 111, 54, -1, 7};
-
-    static const uint64_t Msquares = 0x1818000000;
-
     int Score = 0;
 
     int rank = sq.rank();

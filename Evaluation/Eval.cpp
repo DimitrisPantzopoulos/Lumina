@@ -6,7 +6,7 @@
 #include "Eval.h"
 
 int Evaluation(const chess::Board& board){
-    int Perspective = board.sideToMove() == chess::Color::WHITE ? 1 : -1;
+    const int Perspective = board.sideToMove() == chess::Color::WHITE ? 1 : -1;
 
     // Get both pawn bitboards which is used in the Bishop Evaluation and the squares which the pawns control because that is used in 
     // Space and knight evaluation
@@ -32,82 +32,77 @@ int Evaluation(const chess::Board& board){
     int WhiteScore = 0;
     int BlackScore = 0;
 
-    int WhiteBishops = 0;
-    int BlackBishops = 0;
-
-    // Calculate the weight for endgame influence
-    // Get the Weight form the opposition's side to know when to get aggresive
-    int WhitePieceCount  = WhiteBitboard.count();
-    int BlackPieceCount  = BlackBitboard.count();
-
-    float WEndgameWeight = CalculateEndgameWeights(WhitePieceCount);
-    float BEndgameWeight = CalculateEndgameWeights(BlackPieceCount);
+    float EndgameWeight = CalculateEndgameWeights(Indexes.count());
 
     chess::Square WKsq = board.kingSq(chess::Color::WHITE);
     chess::Square BKsq = board.kingSq(chess::Color::BLACK);
 
     while (Indexes != 0) {
-        const int Index = Indexes.pop();
-        const chess::Square Sq = chess::Square(Index);
-        const chess::Piece piece = board.at(Index);
+        const int           Index = Indexes.pop();
+        const chess::Square Sq    = chess::Square(Index);
+        const chess::Piece  Piece = board.at(Index);
         
-        const int PieceType = static_cast<int>(piece.type());
-        const bool Color = piece.color() == chess::Color::WHITE;
-    
-        const float EndgameWeight     = Color ? BEndgameWeight : WEndgameWeight;
-        const float OppEndgameWeight  = Color ? WEndgameWeight : BEndgameWeight;
-    
-        const chess::Bitboard& OurPawns       = Color ? WPawns : BPawns;
-        const chess::Bitboard& TheirPawns     = Color ? BPawns : WPawns;
-        const chess::Bitboard& TheirPawnSq    = Color ? BPawnsSq : WPawnsSq;
-    
-        const chess::Color OpponentColor     = Color ? chess::Color::BLACK : chess::Color::WHITE;
-        const int SquareIndex = Color ? Index : 63 - Index;
-
-        int& Score = Color ? WhiteScore : BlackScore;
+        const int  PieceType   = Piece.type();
+        const bool Color       = Piece.color() == chess::Color::WHITE;
+        const int  SquareIndex = Color ? Index : 63 - Index;
+        int&       Score       = Color ? WhiteScore : BlackScore;
     
         switch (PieceType) {
-            case 0: // PAWN
+            case 0: { // PAWN
+                const chess::Bitboard& OurPawns       = Color ? WPawns : BPawns;
+                const chess::Bitboard& TheirPawns     = Color ? BPawns : WPawns;
+
                 Score += EvaluatePawn(Sq, TheirPawns, OurPawns, EndgameWeight, Color);
                 Score += TaperedEvaluation(EndgameWeight, PAWN_VALUE_MG, PAWN_VALUE_EG);
                 Score += TaperedEvaluation(EndgameWeight, mg_pawn_table[SquareIndex], eg_pawn_table[SquareIndex]);
                 break;
-            case 1: // KNIGHT
+            }
+            case 1: { // KNIGHT
+                const chess::Bitboard& OurPawns       = Color ? WPawns : BPawns;
+                const chess::Bitboard& TheirPawns     = Color ? BPawns : WPawns;
+                const chess::Bitboard& TheirPawnSq    = Color ? BPawnsSq : WPawnsSq;
+
                 Score += EvaluateKnight(Sq, TheirPawns, OurPawns, TheirPawnSq, EndgameWeight, Color);
                 Score += TaperedEvaluation(EndgameWeight, KNIGHT_VALUE_MG, KNIGHT_VALUE_EG);
                 Score += mg_knight_table[SquareIndex];
                 break;
-            case 2: // BISHOP
+            }
+            case 2: { // BISHOP
+                const chess::Bitboard& OurPawns       = Color ? WPawns : BPawns;
+                const chess::Bitboard& TheirPawns     = Color ? BPawns : WPawns;
+                const chess::Bitboard& TheirPawnSq    = Color ? BPawnsSq : WPawnsSq;
+
                 Score += EvaluateBishop(Sq, CombinedBitboard, TheirPawns, OurPawns, TheirPawnSq, EndgameWeight, Color);
                 Score += TaperedEvaluation(EndgameWeight, BISHOP_VALUE_MG, BISHOP_VALUE_EG);
                 Score += mg_bishop_table[SquareIndex];
-
-                if (Color)
-                    WhiteBishops++;
-                else
-                    BlackBishops++;
-
                 break;
-            case 3: // ROOK
+            }
+            case 3: { // ROOK
+                const chess::Bitboard& OurPawns       = Color ? WPawns : BPawns;
+                const chess::Bitboard& TheirPawns     = Color ? BPawns : WPawns;
+
                 Score += EvaluateRooks(Sq, TheirPawns, OurPawns, CombinedBitboard, EndgameWeight, Color);
                 Score += TaperedEvaluation(EndgameWeight, ROOK_VALUE_MG, ROOK_VALUE_EG);
                 Score += mg_rook_table[SquareIndex];
                 break;
+            }
             case 4: // QUEEN
                 Score += TaperedEvaluation(EndgameWeight, QUEEN_VALUE_MG, QUEEN_VALUE_EG);
                 Score += mg_queen_table[SquareIndex];
                 break;
-            case 5:
+
+            case 5: {  
+                const chess::Bitboard& OurPawns = Color ? WPawns : BPawns;
+
+                Score += EvaluateKing(Sq, CombinedBitboard, OurPawns, EndgameWeight, Color);
                 Score += TaperedEvaluation(EndgameWeight, mg_king_table[SquareIndex], eg_king_table[SquareIndex]);
                 break;
+            }
         }
     }
     
-    WhiteScore += WhiteBishops > 1 ? PrecomputedBishopValues(BlackPieceCount) : 0;
-    BlackScore += BlackBishops > 1 ? PrecomputedBishopValues(WhitePieceCount) : 0;
-
-    WhiteScore += SafetyScore(WKsq, CombinedBitboard, WPawns, BEndgameWeight, true);
-    BlackScore += SafetyScore(BKsq, CombinedBitboard, BPawns, WEndgameWeight, false);
+    WhiteScore += board.pieces(chess::PieceType::BISHOP, chess::Color::WHITE).count() > 1 ? PrecomputedBishopValues(BlackBitboard.count()) : 0;
+    BlackScore += board.pieces(chess::PieceType::BISHOP, chess::Color::BLACK).count() > 1 ? PrecomputedBishopValues(WhiteBitboard.count()) : 0;
 
     return (WhiteScore - BlackScore) * Perspective;
 }
