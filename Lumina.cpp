@@ -36,11 +36,13 @@ void Lumina::Think(chess::Board& board, int Milliseconds) {
     CanSearch = true;
     auto TimerThread = std::thread(Timer, Milliseconds, std::ref(CanSearch));
 
+    CounterTable.Clear();
+
     chess::Move BestMove     = chess::Move::NO_MOVE;
     int         BestEval     = Ninfinity;
     int         LastBestEval = Ninfinity;
 
-    chess::Movelist LegalMoves = OrderMoves(board, BestMove, board.halfMoveClock());
+    chess::Movelist LegalMoves = OrderMoves(board, BestMove, board.halfMoveClock(), chess::Move::NO_MOVE);
     std::vector<int> MoveScores;
 
     // TODO: TUNE THE WINDOW SIZE
@@ -56,7 +58,7 @@ void Lumina::Think(chess::Board& board, int Milliseconds) {
         for (const auto& move : LegalMoves) {
             board.makeMove(move);
 
-            int eval = -Search(board, StartingPly, PlyRemaining, -beta, -alpha, 0);
+            int eval = -Search(board, StartingPly, PlyRemaining, -beta, -alpha, 0, chess::Move::NO_MOVE);
 
             board.unmakeMove(move);
 
@@ -89,6 +91,7 @@ void Lumina::Think(chess::Board& board, int Milliseconds) {
         PlyRemaining++;
 
         LegalMoves = OrderFromIteration(LegalMoves, MoveScores);
+
     }
 
     if (TimerThread.joinable()) {
@@ -99,7 +102,7 @@ void Lumina::Think(chess::Board& board, int Milliseconds) {
     std::cout << "bestmove " << chess::uci::moveToUci(BestMove) << std::endl;
 }
 
-int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, int beta, int Extensions) {
+int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, int beta, int Extensions, const chess::Move& LastMove) {
     if (!CanSearch || board.isRepetition(1)) { return SEARCH_CANCELLED; }
     
     chess::Move BestMove = chess::Move::NO_MOVE;
@@ -130,7 +133,7 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
 
     if (PlyRemaining >= 3 && !board.inCheck()){
         board.makeNullMove();
-        int NullEval = -Search(board, Ply + 1, PlyRemaining - ((PlyRemaining >= 6) ? 3 : 2), -beta, -beta+1, Extensions);
+        int NullEval = -Search(board, Ply + 1, PlyRemaining - ((PlyRemaining >= 6) ? 3 : 2), -beta, -beta+1, Extensions, chess::Move::NO_MOVE);
         board.unmakeNullMove();
 
         if (!CanSearch) {return SEARCH_CANCELLED;}
@@ -140,7 +143,7 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
         }
     }
 
-    chess::Movelist LegalMoves = OrderMoves(board, BestMove, Ply);
+    chess::Movelist LegalMoves = OrderMoves(board, BestMove, LastMove, Ply);
 
     // CHECK TO SEE IF THE GAME IS OVER
     if (LegalMoves.empty()){
@@ -153,18 +156,17 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
         const bool isCapture = board.isCapture(move);
 
         board.makeMove(move);
-
         int Extension = CalculateExtension(board, Extensions, move);
         bool needsFullSearch = true;
         int eval = 0;
 
         if (i >= 3 && Extension == 0 && PlyRemaining >= 3 && !isCapture) {
-            eval = -Search(board, Ply + 1, PlyRemaining - ReduceDepth, -alpha-1, -alpha, Extensions);
+            eval = -Search(board, Ply + 1, PlyRemaining - ReduceDepth, -alpha-1, -alpha, Extensions, move);
             needsFullSearch = eval > alpha;
         }
 
         if (needsFullSearch) {
-            eval = -Search(board, Ply+1, PlyRemaining-1 + Extension, -beta, -alpha, Extensions + Extension);
+            eval = -Search(board, Ply+1, PlyRemaining-1 + Extension, -beta, -alpha, Extensions + Extension, move);
         }
 
         board.unmakeMove(move);
@@ -175,8 +177,11 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
             TranspositionTable.storeTTEntry(key, beta, PlyRemaining, LOWERBOUND, move);
 
             if (!isCapture && !(move.typeOf() == chess::Move::PROMOTION)) {
+                const bool SideToMove = board.sideToMove();
+
                 KillerMoveTable.addKillerMoves(move, eval, board.halfMoveClock());
-                HistoryTable.Update(board.sideToMove(), move, PlyRemaining, true);
+                HistoryTable.Update(SideToMove, move, PlyRemaining, true);
+                CounterTable.Update(SideToMove, move, LastMove);
             }
 
             return beta;
@@ -199,6 +204,7 @@ int Lumina::Search(chess::Board& board, int Ply, int PlyRemaining, int alpha, in
 }
 
 int Lumina::QSearch(chess::Board& board, int alpha, int beta, int Ply) {
+
     if (!CanSearch) { return SEARCH_CANCELLED; }
 
     chess::Move BestMove = chess::Move::NO_MOVE;

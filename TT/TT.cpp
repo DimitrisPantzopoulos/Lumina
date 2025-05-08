@@ -13,3 +13,7 @@ void Lumina::ClearKMT(){
 void Lumina::ClearHT(){
     HistoryTable.Clear();
 }
+
+void Lumina::ClearCT(){
+    CounterTable.Clear();
+}

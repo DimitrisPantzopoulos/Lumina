@@ -36,6 +36,7 @@ void HandleUCINewGame(Lumina& Lumina, chess::Board& Board){
     Lumina.ClearKMT();
     Lumina.ClearTT();
     Lumina.ClearHT();
+    Lumina.ClearCT();
 }
 
 void HandlePosition(chess::Board& Board, const vector<string>& Tokens){
@@ -139,7 +140,6 @@ void UCI() {
         else if (Command == "quit") {
             std::exit(0);
         }
-        
         else {
             // Unknown or unsupported commands
             cout << "Unknown command: " << Command << endl;

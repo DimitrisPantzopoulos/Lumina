@@ -165,4 +165,30 @@ struct HT{
     }
 };
 
+struct CT{
+    chess::Move CounterTable[2][64][64] = {};
+
+    void Clear(){
+        for (int color = 0; color < 2; ++color) {
+            for (int from = 0; from < 64; ++from) {
+                for (int to = 0; to < 64; ++to) {   
+                    CounterTable[color][from][to] = chess::Move::NO_MOVE;
+                }
+            }
+        }
+    }
+
+    void Update(const bool Color, const chess::Move& RefutationMove, const chess::Move& OpponentsMove){
+        if (OpponentsMove == chess::Move::NO_MOVE || RefutationMove == chess::Move::NO_MOVE) { return; }
+
+        CounterTable[Color][OpponentsMove.from().index()][OpponentsMove.to().index()] = RefutationMove;
+    }   
+
+    chess::Move CounterMoveHeuristic(const bool Color, const chess::Move& OpponentsMove) {
+        if (OpponentsMove == chess::Move::NO_MOVE) { return chess::Move::NO_MOVE; }
+    
+        return CounterTable[Color][OpponentsMove.from().index()][OpponentsMove.to().index()];
+    }
+};
+
 #endif

@@ -11,8 +11,9 @@ enum MoveTypes : int {
     HASH_SCORE          =  10000000,
     CAPTURE_SCORE       =  7000000,
     FIRST_KILLER_SCORE  =  6000000,
-    SECOND_KILLER_SCORE =  5000000,
-    PROMOTION_SCORE     =  4000000,
+    COUNTER_MOVE        =  5500000,
+    SECOND_KILLER_SCORE =  5000000,    
+    PROMOTION_SCORE     =  1000000,
     NEGATIVE_SCORE      = -10000000,
 };
 
@@ -25,11 +26,13 @@ bool compareMoves(const ScoredMove &a, const ScoredMove &b) {
     return a.score > b.score;
 }
 
-chess::Movelist Lumina::OrderMoves(const chess::Board& board, const chess::Move& HashMove, const int Ply)
-{
-    chess::Movelist KillerMoves = KillerMoveTable.getKillerMoves(Ply);
+chess::Movelist Lumina::OrderMoves(const chess::Board& board, const chess::Move& HashMove, const chess::Move& LastMove, const int Ply)
+{   
+    const bool SideToMove = board.sideToMove();
 
-    chess::Color OppColor = ~board.sideToMove();
+    // Get Killer Moves and Counter Moves
+    const chess::Movelist KillerMoves = KillerMoveTable.getKillerMoves(Ply);
+    const chess::Move     CounterMove = CounterTable.CounterMoveHeuristic(SideToMove, LastMove);
 
     chess::Movelist Moves;
     chess::movegen::legalmoves(Moves, board);
@@ -38,8 +41,6 @@ chess::Movelist Lumina::OrderMoves(const chess::Board& board, const chess::Move&
 
     //Extract the sorted moves into a Movelist
     chess::Movelist SortedMoves;
-
-    const bool stm = board.sideToMove();
 
     for (const auto &move : Moves){
         int Score = 0;
@@ -64,6 +65,8 @@ chess::Movelist Lumina::OrderMoves(const chess::Board& board, const chess::Move&
             Score += FIRST_KILLER_SCORE;
         }else if(move == KillerMoves[1]) {
             Score += SECOND_KILLER_SCORE;
+        }else if(move == CounterMove){
+            Score += COUNTER_MOVE;
         }
 
         // Prioritise captures
@@ -75,7 +78,7 @@ chess::Movelist Lumina::OrderMoves(const chess::Board& board, const chess::Move&
             
             Score += GoodCapture ? CAPTURE_SCORE + LVA_MVV : LVA_MVV;
         }else {
-            Score += HistoryTable.HistoryHeuristic(stm, move);
+            Score += HistoryTable.HistoryHeuristic(SideToMove, move);
         }
 
         // Promotions are likely to be good
@@ -84,7 +87,7 @@ chess::Movelist Lumina::OrderMoves(const chess::Board& board, const chess::Move&
         }
 
         // Discourage the pieces from going to squares that are being attacked
-        else if(board.isAttacked(ToSq, OppColor)){
+        else if(board.isAttacked(ToSq, !SideToMove)){
             Score -= AttackerScore;
         }
 
