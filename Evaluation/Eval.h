@@ -3,10 +3,7 @@
 
 #include "..\ChessLib\chess.hpp"
 
-using namespace chess;
-using namespace std;
-
-int Evaluation(const Board& board);
+int Evaluation(const chess::Board& board);
 
 #endif
 

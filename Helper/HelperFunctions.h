@@ -4,35 +4,40 @@
 #include "..\ChessLib\chess.hpp"
 #include <vector>
 
-inline uint64_t NorthFill(uint64_t BB){
+constexpr int MAX_PHASE = 24;
+
+inline chess::Bitboard NorthFill(chess::Bitboard BB){
     BB |= (BB << 8);
     BB |= (BB << 16);
     BB |= (BB << 32);
     return BB;
 }
 
-inline uint64_t SouthFill(uint64_t BB){
+inline chess::Bitboard SouthFill(chess::Bitboard BB){
     BB |= (BB >> 8);
     BB |= (BB >> 16);
     BB |= (BB >> 32);
     return BB;
 }
 
-inline int TaperedEvaluation(const float& weight, const int WeightMG, const int WeightEG){
-    return static_cast<int>(weight * WeightMG + (1 - weight) * WeightEG);
+inline int CalculateGamePhase(const chess::Board& board){
+    constexpr int KnightWeight = 1;
+    constexpr int BishopWeight = 1;
+    constexpr int RookWeight  = 2;
+    constexpr int QueenWeight = 4;
+
+    int Phase = 0;
+
+    Phase += board.pieces(chess::PieceType::KNIGHT).count() * KnightWeight;
+    Phase += board.pieces(chess::PieceType::BISHOP).count() * BishopWeight;
+    Phase += board.pieces(chess::PieceType::ROOK  ).count() * RookWeight;
+    Phase += board.pieces(chess::PieceType::QUEEN ).count() * QueenWeight;
+
+    return Phase;
 }
 
-inline chess::Bitboard GetPawnControlledSquares(const chess::Bitboard& pawns, const chess::Color color){
-    chess::Bitboard PawnIndexes = pawns;
-    chess::Bitboard PawnAttackBitboard(0ULL);
-
-    while (PawnIndexes != 0) {
-        chess::Square Index(PawnIndexes.lsb());
-        PawnAttackBitboard |= chess::attacks::pawn(color, Index);
-        PawnIndexes &= PawnIndexes.pop();
-    }
-
-    return PawnAttackBitboard;
+inline int TaperedEval(int MgWeight, int EgWeight, int Phase) {
+    return (MgWeight * Phase + EgWeight * (MAX_PHASE - Phase)) / MAX_PHASE;
 }
 
 inline int CalculateExtension(const chess::Board& board, int &Extensions, const chess::Move& move) {
