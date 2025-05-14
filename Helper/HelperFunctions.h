@@ -1,7 +1,7 @@
 #ifndef HELPERFUNCTIONS_H
 #define HELPERFUNCTIONS_H
 
-#include "..\ChessLib\chess-library\include\chess.hpp"
+#include "..\ChessLib\chess.hpp"
 #include <vector>
 
 inline uint64_t NorthFill(uint64_t BB){

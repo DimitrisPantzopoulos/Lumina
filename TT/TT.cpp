@@ -1,4 +1,4 @@
-#include "..\ChessLib\chess-library\include\chess.hpp"
+#include "..\ChessLib\chess.hpp"
 #include "../Lumina.h"
 #include "TT.h"
 

@@ -1,7 +1,7 @@
 #ifndef LUMINA_H
 #define LUMINA_H
 
-#include "ChessLib\chess-library\include\chess.hpp"
+#include "ChessLib\chess.hpp"
 #include "Evaluation/Eval.h"
 #include "TT/TT.h"
 
@@ -22,6 +22,7 @@ class Lumina {
         TT  TranspositionTable = TT();
         HT  HistoryTable       = HT();
         CT  CounterTable       = CT();
+        
     public:
         chess::Movelist OrderMoves   (const chess::Board& board, const chess::Move& HashMove, const chess::Move& LastMove ,const int Ply);
         chess::Movelist OrderCaptures(const chess::Board& board, const Move& HashMove);

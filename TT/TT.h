@@ -1,7 +1,7 @@
 #ifndef TT_H
 #define TT_H
 
-#include "..\ChessLib\chess-library\include\chess.hpp"
+#include "..\ChessLib\chess.hpp"
 
 #include <cstdlib>
 #include <vector>

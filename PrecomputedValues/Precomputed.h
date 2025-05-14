@@ -1,9 +1,9 @@
 #pragma once
 
-#include "..\ChessLib\chess-library\include\chess.hpp"
+#include "..\ChessLib\chess.hpp"
 
-#define BISHOPPAIR_MG 154.0f
-#define BISHOPPAIR_EG 144.0f
+#define BISHOPPAIR_MG 30
+#define BISHOPPAIR_EG 40
 
 constexpr std::array<float, 32> GenerateEndgameWeights() {
     std::array<float, 32> weights{};

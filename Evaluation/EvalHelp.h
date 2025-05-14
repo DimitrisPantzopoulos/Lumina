@@ -1,7 +1,7 @@
 #ifndef EVALHELP_H
 #define EVALHELP_H
 
-#include "..\ChessLib\chess-library\include\chess.hpp"
+#include "..\ChessLib\chess.hpp"
 #include "..\Helper\HelperFunctions.h"
 
 constexpr std::array<int, 64> mg_pawn_table = {
@@ -106,7 +106,6 @@ constexpr int ROOK_VALUE_EG = 1716;
 
 constexpr int QUEEN_VALUE_MG = 3412;
 constexpr int QUEEN_VALUE_EG = 3151;
-
 
 constexpr int NOPAWNSHIELD_MG = 7;
 constexpr int NOPAWNSHIELD_EG = 15;

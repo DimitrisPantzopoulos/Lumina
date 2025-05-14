@@ -1,7 +1,7 @@
 #ifndef SEE_H
 #define SEE_H
 
-#include "..\ChessLib\chess-library\include\chess.hpp"
+#include "..\ChessLib\chess.hpp"
 #include "..\Evaluation\Eval.h"
 #include "HelperFunctions.h"
 

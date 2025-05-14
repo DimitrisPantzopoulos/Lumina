@@ -1,9 +1,12 @@
-#include "..\ChessLib\chess-library\include\chess.hpp"
+#include "..\ChessLib\chess.hpp"
 #include "..\PrecomputedValues\Precomputed.h"
 #include "..\Helper\HelperFunctions.h"
 
 #include "EvalHelp.h"
 #include "Eval.h"
+
+constexpr uint64_t AFILE = 0x101010101010101;
+constexpr uint64_t HFILE = 0x8080808080808080;
 
 int Evaluation(const chess::Board& board){
     const int Perspective = board.sideToMove() == chess::Color::WHITE ? 1 : -1;

@@ -1,4 +1,4 @@
-#include "..\ChessLib\chess-library\include\chess.hpp"
+#include "..\ChessLib\chess.hpp"
 #include "..\PrecomputedValues\Precomputed.h"
 #include "..\Helper\HelperFunctions.h"
 
@@ -71,11 +71,6 @@ int EvaluatePawn(const chess::Square &sq, const chess::Bitboard &EnemyPawns, con
     // Check for isolated pawns
     if ((flankMask & FriendPawns) == 0) {
         Score += TaperedEvaluation(weight, DOUBLEDPAWN_MG, DOUBLEDPAWN_EG);
-    }
-    
-    // Check if pawn is in the centre squares 
-    if((currentPawnPosition & Msquares) != 0){
-        Score += TaperedEvaluation(weight, CENTREPAWN_MG, CENTREPAWN_EG);
     }
 
     // if((isWhite && rank != 2) || (!isWhite && rank != 7)){
