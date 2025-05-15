@@ -24,9 +24,8 @@ int Evaluation(const chess::Board& board){
     const chess::Bitboard WhiteQueens  = board.pieces(chess::PieceType::QUEEN,  chess::Color::WHITE);
     const chess::Bitboard BlackQueens  = board.pieces(chess::PieceType::QUEEN,  chess::Color::BLACK);
 
-    const chess::Bitboard WhiteKings   = board.pieces(chess::PieceType::KING,   chess::Color::WHITE);
-    const chess::Bitboard BlackKings   = board.pieces(chess::PieceType::KING,   chess::Color::BLACK);
-
+    const chess::Bitboard WhiteKing    = board.pieces(chess::PieceType::KING,   chess::Color::WHITE);
+    const chess::Bitboard BlackKing    = board.pieces(chess::PieceType::KING,   chess::Color::BLACK);
 
     int WhiteScore = 0;
     int BlackScore = 0;
@@ -36,6 +35,7 @@ int Evaluation(const chess::Board& board){
     EvaluateBishops(WhiteBishops, BlackBishops, GamePhase, WhiteScore, BlackScore);
     EvaluateRooks  (WhiteRooks,   BlackRooks,   GamePhase, WhiteScore, BlackScore);
     EvaluateQueens (WhiteQueens,  BlackQueens,  GamePhase, WhiteScore, BlackScore);
+    EvaluateKings  (WhiteKing,    BlackKing,    GamePhase, WhiteScore, BlackScore);
     
     return (WhiteScore - BlackScore) * Perspective;
 }
