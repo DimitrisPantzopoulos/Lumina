@@ -54,4 +54,8 @@ inline int CalculateExtension(const chess::Board& board, int &Extensions, const 
     return Extension;
 }
 
+inline int MirrorSquare(int sq) {
+    return ((7 - (sq / 8)) * 8) + (sq % 8);
+}
+
 #endif
