@@ -4,55 +4,78 @@
 #include "..\ChessLib\chess.hpp"
 #include "..\Helper\HelperFunctions.h"
 
-constexpr int PawnPSTMg[] = {0, 0, 0, 0, 0, 0, 0, 0, -195, -30, -126, -165, -219, 80, 69, -62, -139, -22, 3, 5, 99, 58, 67, -55, -133, -16, 184, 275, 237, 58, 2, -85, -60, 63, 98, 184, 213, 239, 144, 84, 68, 148, 196, 193, 232, 256, 136, 177, 436, 192, 313, 374, 609, 166, 24, -80, 0, 0, 0, 0, 0, 0, 0, 0};
-constexpr int PawnPSTEg[] = {0, 0, 0, 0, 0, 0, 0, 0, 139, 61, 178, 246, 481, 7, -6, 78, 79, 61, 81, 135, 73, 44, 21, 63, 104, 60, -50, -61, -46, 50, 24, 71, 171, 100, 102, 27, 18, 2, 44, 69, 276, 155, 70, 76, 17, 67, 189, 170, 588, 679, 393, 319, 89, 593, 462, 618, 0, 0, 0, 0, 0, 0, 0, 0};
+constexpr int PawnPSTMg[] = {0, 0, 0, 0, 0, 0, 0, 0, -72, -15, -80, -23, -62, 105, 75, 32, -59, -35, 6, 63, 132, 106, 51, 20, -86, -24, 119, 218, 184, 97, 16, -14, -62, 28, 9, 154, 158, 123, 88, 63, -33, 142, 71, 160, 128, 218, 95, 91, 119, 256, 101, 77, 295, 348, 28, -150, 0, 0, 0, 0, 0, 0, 0, 0};
+constexpr int PawnPSTEg[] = {0, 0, 0, 0, 0, 0, 0, 0, 144, 114, 189, 229, 332, 78, 68, 95, 111, 131, 137, 126, 86, 81, 95, 95, 130, 123, 53, 16, 56, 82, 92, 107, 196, 146, 156, 93, 92, 92, 108, 110, 318, 184, 163, 132, 91, 106, 192, 173, 534, 557, 492, 423, 275, 476, 511, 547, 0, 0, 0, 0, 0, 0, 0, 0};
 
-constexpr int KnightPSTMg[] = {-454, -65, -111, -4, -35, 68, -169, -203, -140, -40, 71, 122, 81, 120, -3, -8, -59, 164, 213, 184, 271, 233, 233, -21, 139, 141, 298, 208, 268, 264, 196, 146, 159, 256, 384, 370, 286, 479, 263, 416, 172, 428, -95, 478, 516, -138, 483, 338, 119, 65, 567, -335, 383, 307, 203, 268, -216, -225, -483, -597, 168, -577, -26, -39};
-constexpr int KnightPSTEg[] = {105, 100, 206, 84, 115, 35, 245, 183, 312, 238, 280, 236, 232, 173, 142, 121, 173, 242, 231, 383, 302, 178, 187, 168, 242, 314, 346, 428, 388, 358, 267, 127, 285, 302, 428, 450, 411, 412, 334, 111, 235, 162, 572, 333, 424, 804, 306, 166, 135, 332, 236, 595, 403, 369, 205, 120, -75, 302, 492, 465, 290, 121, 178, -309};      
+constexpr int KnightPSTMg[] = {47, 99, 5, 73, 55, 130, 32, 25, 88, 68, -19, 59, 20, 18, 106, 139, 39, 54, -37, -20, 27, -17, 83, 61, 158, 33, 10, -38, -7, 25, 39, 177, 191, 113, 68, 33, -24, 154, 135, 362, 109, 199, -52, 162, 277, 104, 287, 155, 124, 77, 162, 196, 93, 253, 209, 224, -172, -98, -333, -312, 177, -302, -285, -145};
+constexpr int KnightPSTEg[] = {97, 133, 205, 37, 95, 113, 227, 297, 311, 226, 52, -14, 28, -10, 93, 170, 171, 36, -131, -31, -103, -155, 12, 132, 230, 64, -59, 4, -2, -79, 59, 79, 179, 64, -19, 51, -3, -33, 48, 100, 184, 24, -21, -95, -115, 1, 25, 180, 183, 209, 75, 61, 112, -4, 158, 243, 203, 314, 366, 300, 127, 236, 153, 189};
 
-constexpr int BishopPSTMg[] = {162, 243, 102, 107, 136, 51, 289, 193, 376, 339, 373, 199, 223, 337, 415, 340, 268, 364, 254, 311, 248, 323, 321, 276, 273, 262, 313, 334, 330, 328, 263, 231, 307, 300, 352, 438, 414, 335, 271, 262, 311, 370, -398, 281, 141, -600, 271, 380, 192, 299, 168, -716, -454, 20, -21, 236, 124, -632, -480, -588, -432, -554, -111, 387};
-constexpr int BishopPSTEg[] = {180, 130, 124, 181, 113, 234, 34, 96, 120, 149, 250, 245, 264, 169, 142, 26, 180, 328, 299, 313, 362, 286, 225, 248, 182, 349, 346, 372, 351, 282, 269, 256, 194, 333, 329, 377, 356, 341, 274, 271, 331, 392, 532, 381, 426, 686, 338, 186, 173, 234, 411, 604, 553, 358, 459, 20, 116, 525, 447, 423, 327, 440, 431, 323};
+constexpr int BishopPSTMg[] = {212, 268, 178, 141, 146, 156, 360, 267, 397, 288, 311, 214, 237, 309, 370, 292, 282, 331, 222, 235, 205, 262, 275, 280, 331, 229, 233, 280, 250, 202, 195, 280, 225, 278, 280, 326, 263, 244, 258, 257, 297, 380, 308, 269, 226, 283, 348, 361, 215, 179, 142, 72, 268, 154, 137, 297, 200, 251, 160, -263, 25, 78, 183, 248};
+constexpr int BishopPSTEg[] = {218, 194, 161, 210, 169, 210, 87, 117, 169, 172, 206, 197, 205, 129, 167, 137, 169, 231, 226, 228, 230, 188, 192, 279, 153, 257, 219, 202, 196, 193, 229, 247, 236, 210, 165, 204, 189, 215, 176, 241, 311, 260, 151, 180, 199, 201, 174, 165, 223, 266, 261, 315, 213, 197, 310, 91, 230, 315, 302, 316, 290, 286, 200, 292};
 
-constexpr int RookPSTMg[] = {-10, 34, 118, 95, 121, 5, 74, 0, -96, -42, 60, 59, 36, -20, 175, -47, -75, 30, 4, -23, 51, 24, 56, 73, 69, -106, 114, 33, 53, -106, 110, 63, 150, 84, 171, 283, 226, 129, 256, 246, 332, 297, 242, 267, 270, 324, 374, 402, 303, 174, 356, 364, 286, 321, 154, 471, 389, 157, 385, -361, -152, -1617, 126, 310};
-constexpr int RookPSTEg[] = {281, 330, 294, 310, 270, 237, 337, 273, 278, 306, 336, 326, 297, 324, 201, 260, 408, 358, 408, 370, 330, 285, 296, 243, 432, 489, 428, 462, 396, 456, 308, 375, 443, 497, 504, 460, 405, 440, 344, 363, 430, 467, 523, 475, 472, 470, 397, 336, 448, 539, 551, 556, 557, 528, 557, 415, 482, 465, 426, 718, 602, 999, 532, 435};       
+constexpr int RookPSTMg[] = {370, 384, 417, 414, 425, 385, 392, 352, 294, 333, 374, 393, 360, 353, 503, 348, 297, 360, 355, 301, 356, 344, 436, 429, 320, 271, 422, 382, 371, 268, 398, 327, 390, 371, 398, 452, 443, 474, 504, 541, 497, 523, 459, 454, 525, 571, 571, 622, 479, 386, 490, 519, 462, 456, 427, 647, 577, 374, 632, 330, 539, 235, 858, 337};
+constexpr int RookPSTEg[] = {535, 526, 519, 506, 483, 502, 547, 539, 514, 513, 549, 533, 505, 537, 440, 441, 570, 539, 559, 567, 535, 477, 482, 466, 584, 590, 571, 583, 547, 581, 495, 532, 609, 618, 611, 615, 554, 527, 501, 482, 557, 581, 605, 590, 578, 545, 543, 533, 577, 655, 643, 630, 642, 657, 608, 523, 598, 613, 577, 707, 607, 715, 562, 679};
 
-constexpr int QueenPSTMg[] = {326, 275, 261, 327, 297, 258, 207, 159, 205, 350, 410, 367, 295, 408, 485, 753, 396, 403, 270, 264, 286, 293, 446, 412, 285, 263, 305, 204, 351, 310, 377, 416, 375, 352, 425, 417, 410, 367, 327, 357, 457, 572, 501, 497, 498, 608, 577, 587, 486, 390, 408, 320, 413, 454, 555, 736, 364, 473, 790, 545, 431, 905, 716, 615};      
-constexpr int QueenPSTEg[] = {602, 487, 541, 355, 658, 401, 804, 664, 801, 690, 572, 673, 853, 589, 319, 92, 826, 686, 1056, 952, 990, 1037, 701, 525, 931, 1063, 959, 1504, 1046, 984, 898, 679, 973, 1002, 996, 1166, 1184, 1133, 1243, 1143, 722, 862, 889, 984, 1074, 1214, 1015, 736, 786, 888, 1058, 1247, 1273, 1231, 1099, 658, 869, 940, 922, 1050, 1188, 791, 923, 848};
+constexpr int QueenPSTMg[] = {843, 818, 811, 826, 822, 809, 836, 828, 736, 866, 896, 890, 840, 917, 1047, 1154, 911, 891, 810, 828, 840, 800, 907, 861, 793, 833, 800, 692, 824, 853, 853, 893, 851, 801, 811, 774, 789, 798, 840, 784, 901, 927, 881, 947, 909, 973, 1000, 1003, 786, 756, 832, 811, 796, 833, 816, 1037, 554, 927, 950, 951, 760, 1048, 978, 887};
+constexpr int QueenPSTEg[] = {1025, 977, 984, 976, 1143, 979, 1051, 1082, 1234, 1083, 1013, 1062, 1183, 1081, 640, 842, 1069, 1063, 1286, 1265, 1275, 1362, 1115, 1030, 1239, 1189, 1256, 1787, 1303, 1250, 1285, 1086, 1273, 1373, 1335, 1463, 1459, 1401, 1419, 1528, 1145, 1214, 1281, 1216, 1445, 1433, 1279, 1134, 1246, 1291, 1295, 1335, 1423, 1434, 1538, 1139, 1357, 1227, 1280, 1296, 1513, 1262, 1331, 1187};
 
-constexpr int KingPSTMg[] = {227, 336, 183, -299, 39, -157, 300, 277, -87, 62, -39, -186, -233, 16, 164, 150, -86, -165, -303, -310, -418, -304, -69, -205, -663, -613, -475, -520, -418, -530, -475, -586, 184, -213, -637, -399, -496, -362, -506, -353, -146, -784, -95, 18, 272, -91, -452, 83, 141, -513, -39, -91, -258, 1, -118, 155, -8, 268, -64, 227, -59, 195, -176, 137};
-constexpr int KingPSTEg[] = {-284, -347, -254, -140, -212, -115, -345, -464, -151, -99, -4, 40, 84, -48, -141, -297, -241, 13, 138, 188, 205, 119, -10, -103, 37, 149, 264, 350, 317, 251, 161, 41, -86, 229, 337, 387, 322, 277, 194, 28, 114, 428, 432, 337, 356, 330, 338, -5, 26, 417, 268, 442, 319, 301, 331, -173, -449, -69, 100, 269, 175, -62, 54, -507}; 
+constexpr int KingPSTMg[] = {86, 170, 58, -307, -33, -177, 91, 89, -106, -19, -63, -166, -175, -65, 30, -10, -44, -48, -142, -166, -227, -206, -74, -264, -167, -334, -148, -187, -160, -273, -173, -380, -236, -42, -42, 15, -218, -34, -114, -228, -28, -600, 249, 139, 381, 160, -98, -16, 300, 173, -20, 197, -117, 550, 6, 316, 123, 400, 204, 382, -161, 434, -249, 65};
+constexpr int KingPSTEg[] = {-213, -182, -114, 1, -88, -1, -156, -257, -43, 1, 53, 96, 104, 43, -23, -104, -116, 37, 139, 147, 161, 121, 51, 31, 12, 123, 196, 223, 226, 197, 121, 41, 16, 140, 200, 246, 224, 187, 111, 58, 34, 286, 201, 202, 254, 188, 199, 65, 8, 148, 142, 276, 224, 171, 224, -105, -276, -84, 69, 50, 92, 10, 47, -331};       
 
-constexpr int PawnBonusMg[] = {-42, -70, -59, 36, -10, 122, 124, 165};
-constexpr int PawnBonusEg[] = {7, 96, 116, 105, 161, 123, 209, 60};
+constexpr int PawnBonusMg[] = {-7, -15, 8, 59, 15, 117, 128, 164};
+constexpr int PawnBonusEg[] = {8, 43, 68, 68, 110, 70, 130, 5};
 
-constexpr int DoubledPawnMg = -87;
-constexpr int DoubledPawnEg = -71;
+constexpr int DoubledPawnMg = -92;
+constexpr int DoubledPawnEg = -25;
 
-constexpr int IsolatedPawnBonusMg = -100;
-constexpr int IsolatedPawnBonusEg = -60;
+constexpr int IsolatedPawnBonusMg = -88;
+constexpr int IsolatedPawnBonusEg = -40;
 
-constexpr int PawnValueMg = 326;
-constexpr int PawnValueEg = 398;
+constexpr int PawnValueMg = 286;
+constexpr int PawnValueEg = 177;
 
-constexpr int KnightValueMg = 673;
-constexpr int KnightValueEg = 1415;
+constexpr int KnightValueMg = 591;
+constexpr int KnightValueEg = 464;
 
-constexpr int BishopValueMg = 833;
-constexpr int BishopValueEg = 1449;
+constexpr int BishopValueMg = 775;
+constexpr int BishopValueEg = 629;
 
-constexpr int RookValueMg = 1224;
-constexpr int RookValueEg = 2468;
+constexpr int RookValueMg = 1047;
+constexpr int RookValueEg = 1098;
 
-constexpr int QueenValueMg = 2973;
-constexpr int QueenValueEg = 3983;
+constexpr int QueenValueMg = 1815;
+constexpr int QueenValueEg = 2055;
 
 constexpr int VirtualQueenMg = -7;
-constexpr int VirtualQueenEg = -13;
+constexpr int VirtualQueenEg = -7;
+
+constexpr int PawnShieldMg = 18;
+constexpr int PawnShieldEg = -12;
+
+constexpr int KnightMobilityMg = 68;
+constexpr int KnightMobilityEg = 74;
+
+constexpr int BishopMobilityMg = 29;
+constexpr int BishopMobilityEg = 19;
+
+constexpr int RookMobilityMg = 29;
+constexpr int RookMobilityEg = 10;
 
 static constexpr uint64_t MIDDLE_SQUARES =  0x0000001818000000ULL;
 static constexpr uint64_t NOT_HFILE      = ~0x8080808080808080ULL;
 static constexpr uint64_t NOT_AFILE      = ~0x0101010101010101ULL;
 static constexpr uint64_t RANK2          =  0x000000000000FF00ULL;
+
+constexpr uint64_t FILE_MASKS[8] = {
+    0x0101010101010101ULL,
+    0x0202020202020202ULL,
+    0x0404040404040404ULL,
+    0x0808080808080808ULL,
+    0x1010101010101010ULL,
+    0x2020202020202020ULL,
+    0x4040404040404040ULL,
+    0x8080808080808080ULL
+};
 
 inline void FindPassedPawns(
     const chess::Bitboard& WhitePawns, 
@@ -170,13 +193,17 @@ inline void EvaluateKnights(
     chess::Bitboard WhiteKnightLocations = WhiteKnights;
     chess::Bitboard BlackKnightLocations = BlackKnights;
 
+    int KnightMobilityBonus = TaperedEval(KnightMobilityMg, KnightMobilityEg, GamePhase);
+
     while(WhiteKnightLocations != 0){
         uint8_t Index = WhiteKnightLocations.pop();
+        WhiteScore += chess::attacks::knight(Index).count() * KnightMobilityBonus;
         WhiteScore += TaperedEval(KnightPSTMg[Index], KnightPSTEg[Index], GamePhase);
     }
 
     while(BlackKnightLocations != 0){
         uint8_t Index = MirrorSquare(BlackKnightLocations.pop());
+        BlackScore += chess::attacks::knight(Index).count() * KnightMobilityBonus;
         BlackScore += TaperedEval(KnightPSTMg[Index], KnightPSTEg[Index], GamePhase);
     }
 }
@@ -184,6 +211,7 @@ inline void EvaluateKnights(
 inline void EvaluateBishops(
     const chess::Bitboard& WhiteBishops,
     const chess::Bitboard& BlackBishops,
+    const chess::Bitboard& OCC,
     const int GamePhase,
     int& WhiteScore,
     int& BlackScore
@@ -196,20 +224,28 @@ inline void EvaluateBishops(
     chess::Bitboard WhiteBishopLocations = WhiteBishops;
     chess::Bitboard BlackBishopLocations = BlackBishops;
 
+
+    int BishopMobilityBonus = TaperedEval(BishopMobilityMg, BishopMobilityEg, GamePhase);
+
     while(WhiteBishopLocations != 0){
         uint8_t Index = WhiteBishopLocations.pop();
+        WhiteScore += chess::attacks::bishop(Index, OCC).count() * BishopMobilityBonus;
         WhiteScore += TaperedEval(BishopPSTMg[Index], BishopPSTEg[Index], GamePhase);
     }
 
     while(BlackBishopLocations != 0){
-        uint8_t Index = MirrorSquare(BlackBishopLocations.pop());
-        BlackScore += TaperedEval(BishopPSTMg[Index], BishopPSTEg[Index], GamePhase);
+        uint8_t RawIndex = BlackBishopLocations.pop();
+        uint8_t PSTIndex = MirrorSquare(RawIndex);
+
+        BlackScore += chess::attacks::bishop(RawIndex, OCC).count() * BishopMobilityBonus;
+        BlackScore += TaperedEval(BishopPSTMg[PSTIndex], BishopPSTEg[PSTIndex], GamePhase);
     }
 }
 
 inline void EvaluateRooks(
     const chess::Bitboard& WhiteRooks,
     const chess::Bitboard& BlackRooks,
+    const chess::Bitboard& OCC,
     const int GamePhase,
     int& WhiteScore,
     int& BlackScore
@@ -222,14 +258,23 @@ inline void EvaluateRooks(
     chess::Bitboard WhiteRookLocations = WhiteRooks;
     chess::Bitboard BlackRookLocations = BlackRooks;
 
+    int RookMobilityBonus = TaperedEval(RookMobilityMg, RookMobilityEg, GamePhase);
+
     while (WhiteRookLocations != 0) {
         uint8_t Index = WhiteRookLocations.pop();
+        chess::Bitboard RookAttacks = chess::attacks::rook(Index, OCC);
+
+        WhiteScore += (RookAttacks & FILE_MASKS[Index & 7]).count() * RookMobilityBonus;
         WhiteScore += TaperedEval(RookPSTMg[Index], RookPSTEg[Index], GamePhase);
     }
 
     while (BlackRookLocations != 0) {
-        uint8_t Index = MirrorSquare(BlackRookLocations.pop());
-        BlackScore += TaperedEval(RookPSTMg[Index], RookPSTEg[Index], GamePhase);
+        uint8_t RawIndex = BlackRookLocations.pop();
+        uint8_t PSTIndex = MirrorSquare(RawIndex);
+        chess::Bitboard RookAttacks = chess::attacks::rook(RawIndex, OCC);
+
+        BlackScore += (RookAttacks & FILE_MASKS[RawIndex & 7]).count() * RookMobilityBonus;
+        BlackScore += TaperedEval(RookPSTMg[PSTIndex], RookPSTEg[PSTIndex], GamePhase);
     }
 }
 
@@ -262,6 +307,10 @@ inline void EvaluateQueens(
 inline void EvaluateKings(
     const chess::Bitboard& WhiteKing,
     const chess::Bitboard& BlackKing,
+
+    const chess::Bitboard& WhitePawns,
+    const chess::Bitboard& BlackPawns,
+
     const chess::Bitboard& OCC,
     const int GamePhase,
     int& WhiteScore,
@@ -281,6 +330,16 @@ inline void EvaluateKings(
 
     WhiteScore += chess::attacks::queen(WhiteKingSquare, OCC).count() * VirtualQueenBonus;
     BlackScore += chess::attacks::queen(BlackKingSquare, OCC).count() * VirtualQueenBonus;
+
+    // Evaluate Pawn Shield
+    int PawnShieldBonus = TaperedEval(PawnShieldMg, PawnShieldEg, GamePhase);
+
+    // Pawn Shield Evaluation
+    const chess::Bitboard WhiteKingForwardsMask = ((WhiteKing & NOT_HFILE) << 9) | (WhiteKing << 8) | ((WhiteKing & NOT_AFILE) << 7);
+    const chess::Bitboard BlackKingForwardsMask = ((BlackKing & NOT_AFILE) >> 9) | (BlackKing >> 8) | ((BlackKing & NOT_HFILE) >> 7);
+
+    WhiteScore += (WhiteKingForwardsMask & WhitePawns).count() * PawnShieldBonus;
+    BlackScore += (BlackKingForwardsMask & BlackPawns).count() * PawnShieldBonus;
 }
 
 inline int PiecesValue(const int& PieceType){
@@ -300,4 +359,4 @@ inline int PiecesValue(const int& PieceType){
     }
 }
 
-#endif
+#endif // EVALHELP_H
