@@ -27,9 +27,6 @@ int Evaluation(const chess::Board& board){
     const chess::Bitboard WhiteKing    = board.pieces(chess::PieceType::KING,   chess::Color::WHITE);
     const chess::Bitboard BlackKing    = board.pieces(chess::PieceType::KING,   chess::Color::BLACK);
 
-    const chess::Bitboard WhiteKingRing = chess::attacks::king(WhiteKing.lsb());
-    const chess::Bitboard BlackKingRing = chess::attacks::king(BlackKing.lsb());
-
     const chess::Bitboard WhitePieces = WhitePawns | WhiteKnights | WhiteBishops | WhiteRooks | WhiteQueens | WhiteKing;
     const chess::Bitboard BlackPieces = BlackPawns | BlackKnights | BlackBishops | BlackRooks | BlackQueens | BlackKing;
 
@@ -39,10 +36,10 @@ int Evaluation(const chess::Board& board){
     int BlackScore = 0;
 
     EvaluatePawns  (WhitePawns,   BlackPawns,   GamePhase,  WhiteScore, BlackScore);
-    EvaluateKnights(WhiteKnights, BlackKnights, WhiteKingRing, BlackKingRing, GamePhase,  WhiteScore, BlackScore);
+    EvaluateKnights(WhiteKnights, BlackKnights, GamePhase,  WhiteScore, BlackScore);
     EvaluateBishops(WhiteBishops, BlackBishops, OCC,        GamePhase,  WhiteScore, BlackScore);
     EvaluateRooks  (WhiteRooks,   BlackRooks,   OCC,        GamePhase,  WhiteScore, BlackScore);
-    EvaluateQueens (WhiteQueens,  BlackQueens,  OCC,        GamePhase,  WhiteScore, BlackScore);
+    EvaluateQueens (WhiteQueens,  BlackQueens,  GamePhase,  WhiteScore, BlackScore);
     EvaluateKings  (WhiteKing,    BlackKing,    WhitePawns, BlackPawns, OCC, GamePhase,  WhiteScore, BlackScore);
 
     return (WhiteScore - BlackScore) * Perspective;
