@@ -35,12 +35,12 @@ int Evaluation(const chess::Board& board){
     int WhiteScore = 0;
     int BlackScore = 0;
 
-    EvaluatePawns  (WhitePawns,   BlackPawns,   GamePhase,  WhiteScore, BlackScore);
-    EvaluateKnights(WhiteKnights, BlackKnights, GamePhase,  WhiteScore, BlackScore);
-    EvaluateBishops(WhiteBishops, BlackBishops, OCC,        GamePhase,  WhiteScore, BlackScore);
-    EvaluateRooks  (WhiteRooks,   BlackRooks,   OCC,        GamePhase,  WhiteScore, BlackScore);
-    EvaluateQueens (WhiteQueens,  BlackQueens,  GamePhase,  WhiteScore, BlackScore);
-    EvaluateKings  (WhiteKing,    BlackKing,    WhitePawns, BlackPawns, OCC, GamePhase,  WhiteScore, BlackScore);
+    EvaluatePawns  (WhitePawns,   BlackPawns,   GamePhase, WhiteScore, BlackScore);
+    EvaluateKnights(WhiteKnights, BlackKnights, GamePhase, WhiteScore, BlackScore);
+    EvaluateBishops(WhiteBishops, BlackBishops, GamePhase, WhiteScore, BlackScore);
+    EvaluateRooks  (WhiteRooks,   BlackRooks,   GamePhase, WhiteScore, BlackScore);
+    EvaluateQueens (WhiteQueens,  BlackQueens,  GamePhase, WhiteScore, BlackScore);
+    EvaluateKings  (WhiteKing,    BlackKing,     OCC,      GamePhase,  WhiteScore, BlackScore);
 
     return (WhiteScore - BlackScore) * Perspective;
 }
