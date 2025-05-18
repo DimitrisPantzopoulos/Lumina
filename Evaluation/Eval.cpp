@@ -40,7 +40,7 @@ int Evaluation(const chess::Board& board){
     EvaluateBishops(WhiteBishops, BlackBishops, GamePhase, WhiteScore, BlackScore);
     EvaluateRooks  (WhiteRooks,   BlackRooks,   GamePhase, WhiteScore, BlackScore);
     EvaluateQueens (WhiteQueens,  BlackQueens,  GamePhase, WhiteScore, BlackScore);
-    EvaluateKings  (WhiteKing,    BlackKing,     OCC,      GamePhase,  WhiteScore, BlackScore);
+    EvaluateKings  (WhiteKing,    BlackKing,    WhitePawns,BlackPawns, OCC,      GamePhase,  WhiteScore, BlackScore);
 
     return (WhiteScore - BlackScore) * Perspective;
 }
